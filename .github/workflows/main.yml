@@ -58,7 +58,7 @@ jobs:
 
                 echo ">>> Installing requirements..."
                 cd ${{ secrets.REMOTE_TARGET }}
-                pip install -r requirements.txt
+                /home/ubuntu/.pyenv/versions/3.12.6/bin/pip install -r requirements.txt
 
                 echo ">>> Starting uvicorn with reload and custom logging..."
                 nohup uvicorn main.app:app \
