@@ -55,11 +55,11 @@ jobs:
               ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOSSH'
                 echo ">>> Stopping existing uvicorn process..."
                 pkill -f "uvicorn" || echo "No uvicorn process found"
-          
+                
+                cd ${{ secrets.REMOTE_TARGET }}
                 source .venv/bin/activate
 
                 echo ">>> Installing requirements..."
-                cd ${{ secrets.REMOTE_TARGET }}
                 python -m pip install -r requirements.txt
 
                 echo ">>> Starting uvicorn with reload and custom logging..."
