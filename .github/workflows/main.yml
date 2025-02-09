@@ -26,10 +26,8 @@ jobs:
           
       - name: Create real.env file
         run: |
-          echo "ML_API_KEY=${{ secrets.ML_API_KEY }}" > real.env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> real.env
           echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> real.env
-          echo "SAMPLE_IMAGE=${{ secrets.SAMPLE_IMAGE }}" >> real.env
           echo "DB_USER=${{ secrets.DB_USER }}" >> real.env
           echo "DB_PW=${{ secrets.DB_PW }}" >> real.env
 
@@ -48,3 +46,26 @@ jobs:
               -o StrictHostKeyChecking=no \
               real.env \
               ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+
+      - name: Restart uvicorn server
+        run: |
+          ssh -p ${{ secrets.REMOTE_PORT }} \
+              -i ~/.ssh/id_rsa \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOSSH'
+                echo ">>> Stopping existing uvicorn process..."
+                pkill -f "uvicorn" || echo "No uvicorn process found"
+
+                echo ">>> Installing requirements..."
+                cd ${{ secrets.REMOTE_TARGET }}
+                pip install -r requirements.txt
+
+                echo ">>> Starting uvicorn with reload and custom logging..."
+                nohup uvicorn main.app:app \
+                  --host 0.0.0.0 \
+                  --port 8000 \
+                  --reload \
+                  --log-config logging_config.ini \
+                  > uvicorn.log 2>&1 &
+                echo ">>> Done. Uvicorn is restarted in background."
+          EOSSH
