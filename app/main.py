@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api import test
 from app.core.config import settings
 from app.db.session import get_database
+from app.api.auth import auth_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -117,6 +118,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.getcwd(), "images")),
 
 # endpoint들을 설정하는 부분
 app.include_router(test.router, prefix="/test", tags=["test"])
+app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 
 
 @app.get("/", response_class=HTMLResponse)
