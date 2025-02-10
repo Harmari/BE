@@ -23,12 +23,14 @@ class ReservationCreateRequest(BaseModel):
     designer_id: str
     user_id: str
     reservationDateTime: str
+    consultingFee: str
+    googleMeetLink: str
+    mode: str
 
-    @field_validator("reservationDateTime")
-    @classmethod
-    def validate_reservation_datetime(cls, v: str) -> str:
-        try:
-            datetime.strptime(v, "%Y%m%d%H%M")
-        except ValueError:
-            raise ValueError("reservationDateTime은 yyyymmddHHMM 형식이어야 합니다. 예: 202502100000")
-        return v
+class ReservationCreateResponse(BaseModel):
+    user_id: str
+    designer_id: str
+    reservationDateTime: str
+    googleMeetLink: str
+    mode: str
+    status: str
