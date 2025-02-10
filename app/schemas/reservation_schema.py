@@ -1,30 +1,17 @@
-from pydantic import BaseModel, EmailStr
-
-
-class Customer(BaseModel):
-    name: str
-    email: EmailStr
-    city: str
-
-class Designer(BaseModel):
-    name: str
-    salon: str
-
-class ReservationDetails(BaseModel):
-    date: str
-    time: str
-    type: str
-    price: int
-
-class Payment(BaseModel):
-    method: str
-    status: str
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
 
 class Reservation(BaseModel):
-    customer: Customer
-    designer: Designer
-    reservation: ReservationDetails
-    payment: Payment
+    id: str
+    user_id: str
+    designer_id: str
+    mode: str
+    reservationDateTime: datetime
+    consultingFee: int
+    googleMeetLink: Optional[str]
+    status: str
+    createdAt: datetime
+    updatedAt: datetime
 
-class ReservationQuery(BaseModel):
-    email: EmailStr
+
