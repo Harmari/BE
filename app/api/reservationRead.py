@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.services.reservation_service import get_reservation_by_user_id
+from app.services.reservationRead_service import get_reservation_by_user_id
 
 router = APIRouter()
 
