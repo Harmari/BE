@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, status, Request
-from app.schemas.reservationList_schema import (
+from app.schemas.reservation_schema import (
     ReservationListResponse, ReservationListRequest, ReservationCreateResponse, ReservationCreateRequest
 )
-from app.services.reservationList_service import (
-    reservation_list_service, reservation_create_service
+from app.services.reservation_service import (
+    reservation_list_service, reservation_create_service, get_reservation_by_user_id
 )
 
 router = APIRouter()
@@ -39,3 +39,10 @@ async def reservation_list_endpoint(request: ReservationCreateRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"오류 : {str(e)}"
         )
+
+@router.get("/get")
+async def read_reservation(user_id: str):
+    reservations = await get_reservation_by_user_id(user_id)
+    if not reservations:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    return reservations
