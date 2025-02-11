@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, field_validator
 from typing import List
 
 
@@ -16,3 +17,20 @@ class ReservationListRequest(BaseModel):
 class ReservationListResponse(BaseModel):
     designer_id : str
     reservation_list: List[DayList]
+
+
+class ReservationCreateRequest(BaseModel):
+    designer_id: str
+    user_id: str
+    reservationDateTime: str
+    consultingFee: str
+    googleMeetLink: str
+    mode: str
+
+class ReservationCreateResponse(BaseModel):
+    user_id: str
+    designer_id: str
+    reservationDateTime: str
+    googleMeetLink: str
+    mode: str
+    status: str
