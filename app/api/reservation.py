@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, status, Request
 from app.schemas.reservation_schema import (
-    ReservationListResponse, ReservationListRequest, ReservationCreateResponse, ReservationCreateRequest
+    ReservationListResponse, ReservationListRequest, ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple
 )
 from app.services.reservation_service import (
     reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id
 )
+from typing import List
 
 router = APIRouter()
 
@@ -40,31 +41,39 @@ async def reservation_list_endpoint(request: ReservationCreateRequest):
             detail=f"오류 : {str(e)}"
         )
 
-
 # 예약 리스트
-@router.get("/list")
+@router.get("/get_list", response_model=List[ReservationSimple])
 async def read_reservations(user_id: str):
     try:
         reservations = await get_reservations_list_by_user_id(user_id)
+        if not reservations:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
         return reservations
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"오류 : {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"오류 : {str(e)}"
         )
 
-# 상세 예약 정보
-@router.get("/{reservation_id}")
+@router.get("/get_reservation", response_model=ReservationDetail)
 async def read_reservation(reservation_id: str):
-    reservations = await get_reservation_by_id(reservation_id)
-    if not reservations:
-        raise HTTPException(status_code=404, detail="Reservation not found")
-    return reservations
-
-
-# @router.get("/get")
-# async def read_reservation(user_id: str):
-#     reservations = await get_reservation_by_user_id(user_id)
-#     if not reservations:
-#         raise HTTPException(status_code=404, detail="Reservation not found")
-#     return reservations
+    try:
+        reservations = await get_reservation_by_id(reservation_id)
+        if not reservations:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
+        return reservations
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"오류 : {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"오류 : {str(e)}"
+        )
