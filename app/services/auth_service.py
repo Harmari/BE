@@ -1,12 +1,10 @@
 import httpx
-
-from urllib.parse import urlencode
 from fastapi import HTTPException
 
 from app.core.config import settings
-from app.schemas.user_schema import UserCreate,UserDB
-from app.repository.user_repository import get_user_by_email, create_user
-from app.core.security import create_access_token
+from app.schemas.user_schema import UserCreate, UserDB
+from app.repository.user_repository import get_user_by_email, create_user, update_refresh_token
+from app.core.security import create_access_token, create_refresh_token
 
 # Google OAuth 관련 URL
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/auth"
@@ -95,32 +93,56 @@ async def authenticate_user(user_info: dict) -> dict:
 
         # 기존 사용자 확인
         existing_user = await get_user_by_email(email)
+        
         if existing_user:
-            token = create_access_token({"sub": email})
+            # 사용자의 상태 확인 (banned 또는 inactive 사용자 로그인 차단)
+            if existing_user.get("status") in ["inactive", "banned"]:
+                raise HTTPException(status_code=403, detail="이용이 제한된 사용자입니다.")
+
+            # 기존 Refresh Token 확인 (없다면 새로 생성)
+            refresh_token = existing_user.get("refresh_token")
+            if not refresh_token:
+                refresh_token = create_refresh_token({"sub": email})
+                await update_refresh_token(email, refresh_token)
+
+            # JWT Access Token 발급
+            access_token = create_access_token({"sub": email})
+
             return {
-                "access_token": token,
+                "access_token": access_token,
+                "refresh_token": refresh_token,  
                 "token_type": "bearer",
-                "user": UserDB(**existing_user)
+                "user": {**existing_user, "refresh_token": refresh_token}
             }
         
-        # 신규 사용자 자동 회원가입
+        # 신규 사용자 자동 회원가입 
         new_user_data = UserCreate(
             email=email,
             google_id=google_id,
             name=name,
             profile_image=profile_image,
-            provider="google"
+            provider="google",
+            status="active",
+            refresh_token=None,  
+            created_at=settings.CURRENT_DATETIME,
+            updated_at=settings.CURRENT_DATETIME
         )
 
         # 사용자 등록
         new_user = await create_user(new_user_data)
 
         # JWT 토큰 발급
-        token = create_access_token({"sub": email})
+        access_token = create_access_token({"sub": email})
+        refresh_token = create_refresh_token({"sub": email})
+
+        # Refresh Token을 DB에 저장
+        await update_refresh_token(email, refresh_token)
+
         return {
-            "access_token": token,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
-            "user": new_user
+            "user": {**new_user.model_dump(), "refresh_token": refresh_token}
         }
     
     # 예외처리(HTTPException, 그 외 예외)
