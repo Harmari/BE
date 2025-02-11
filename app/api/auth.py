@@ -16,18 +16,29 @@ async def login():
 @router.get("/callback")
 async def auth_callback(request: Request):
     """Google OAuth 리디렉션 처리 후 로그인"""
-    code = request.query_params.get("code")
-    if not code:
-        raise HTTPException(status_code=400, detail="Authorization code not found")
+    try:
+        # 인증 코드 가져오기
+        code = request.query_params.get("code")
+        if not code:
+            raise HTTPException(status_code=400, detail="code를 가져오지 못하는중..")
 
-    # 액세스 토큰 요청
-    token_data = await get_google_access_token(code)
-    access_token = token_data["access_token"]
+        # 토큰 요청
+        token_data = await get_google_access_token(code)
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=400, detail="access token 못가져오는 중..")
 
-    # 사용자 정보 가져오기
-    userinfo = await get_google_user_info(access_token)
+        # 사용자 정보 요청
+        userinfo = await get_google_user_info(access_token)
 
-    # 기존 회원이면 로그인, 신규 회원은 차단
-    auth_data = await authenticate_user(userinfo)
-
-    return auth_data
+        # 기존 회원 여부 확인 및 로그인 처리
+        auth_data = await authenticate_user(userinfo)
+        return auth_data
+    
+    # 예외처리
+    except HTTPException as e:
+        raise e
+    
+    # 서버 에러 예외처리  
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"error: {str(e)}")
