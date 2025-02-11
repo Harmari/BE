@@ -20,7 +20,7 @@ class UserCreate(UserBase):
 
 class UserDB(UserBase):
     """MongoDB에서 조회되는 사용자 모델"""
+    # 몽고디비 id 문자열 변환
     id: Optional[str] = None 
-
     class Config:
         from_attributes = True
