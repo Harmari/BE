@@ -13,5 +13,3 @@ class Reservation(BaseModel):
     status: str
     createAt: datetime
     updateAt: datetime
-
-
