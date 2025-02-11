@@ -36,14 +36,26 @@ class ReservationCreateResponse(BaseModel):
     status: str
 
 
-class Reservation(BaseModel):
+
+
+class ReservationDetail(BaseModel):
     id: str
     user_id: str
     designer_id: str
     mode: str
-    reservation_date_time: datetime
+    reservation_date_time: str
     consulting_fee: int
     google_meet_link: Optional[str]
     status: str
-    create_at: datetime
-    update_at: datetime
+    create_at: str
+    update_at: str
+
+class ReservationSimple(BaseModel):
+    id: str
+    user_id: str
+    designer_id: str
+    mode: str
+    reservation_date_time: str
+    consulting_fee: int
+    status: str
+
