@@ -11,7 +11,7 @@ class Reservation(BaseModel):
     consultingFee: int
     googleMeetLink: Optional[str]
     status: str
-    createdAt: datetime
-    updatedAt: datetime
+    createAt: datetime
+    updateAt: datetime
 
 
