@@ -33,7 +33,14 @@ async def auth_callback(request: Request):
 
         # 기존 회원 여부 확인 및 로그인 처리
         auth_data = await authenticate_user(userinfo)
-        return auth_data
+
+        # 로그인 성공 시 access_token과 refresh_token 반환
+        return {
+            "access_token": auth_data["access_token"],
+            "refresh_token": auth_data["refresh_token"],
+            "token_type": auth_data["token_type"],
+            "user": auth_data["user"]
+        }
     
     # 예외처리
     except HTTPException as e:
