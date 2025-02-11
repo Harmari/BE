@@ -14,6 +14,16 @@ class Settings(BaseSettings):
     DB_PW: str
     DB_USER: str
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+
+    # JWT
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
     class Config:
         env_file = 'real.env'
         env_file_encoding = 'utf-8'
