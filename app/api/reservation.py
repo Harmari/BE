@@ -60,7 +60,7 @@ async def read_reservations(user_id: str):
             detail=f"오류 : {str(e)}"
         )
 
-@router.get("/get_reservation", response_model=ReservationDetail)
+@router.get("/get_detail", response_model=ReservationDetail)
 async def read_reservation(reservation_id: str):
     try:
         reservations = await get_reservation_by_id(reservation_id)
