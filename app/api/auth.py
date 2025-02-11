@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from app.services.auth.auth_service import (
+from app.services.auth_service import (
     get_google_auth_url,
     get_google_access_token,
     get_google_user_info,
