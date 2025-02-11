@@ -6,7 +6,12 @@ async def get_user_by_email(email: str):
     """이메일로 기존 사용자 조회"""
     db = get_database()
     users_collection = db["users"]
-    return await users_collection.find_one({"email": email})
+    
+    user = await users_collection.find_one({"email": email})
+    if user:
+        user["id"] = str(user["_id"])  
+        user.pop("_id", None)  
+    return user
 
 async def create_user(user_data: UserCreate) -> UserDB:
     """새로운 사용자 등록"""
@@ -19,7 +24,8 @@ async def create_user(user_data: UserCreate) -> UserDB:
     user_dict["updated_at"] = settings.CURRENT_DATETIME
 
     result = await users_collection.insert_one(user_dict)
-    user_dict["id"] = str(result.inserted_id) 
-    user_dict.pop("_id", None) 
 
-    return UserDB(**user_dict) 
+    user_dict["id"] = str(result.inserted_id)  
+    user_dict.pop("_id", None)
+
+    return UserDB(**user_dict)
