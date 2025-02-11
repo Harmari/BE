@@ -4,6 +4,8 @@ from app.services.auth_service import (
     get_google_access_token,
     get_google_user_info,
     authenticate_user,
+    refresh_access_token,
+    logout_user
 )
 
 router = APIRouter()
@@ -42,10 +44,18 @@ async def auth_callback(request: Request):
             "user": auth_data["user"]
         }
     
-    # 예외처리
+    # 예외처리(HTTPException, 그 외 예외)
     except HTTPException as e:
         raise e
-    
-    # 서버 에러 예외처리  
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"error: {str(e)}")
+
+@router.post("/refresh")
+async def refresh_token(refresh_token: str):
+    """Refresh Token을 이용한 Access Token 재발급"""
+    return await refresh_access_token(refresh_token)
+
+@router.post("/logout")
+async def logout(refresh_token: str):
+    """로그아웃 - Refresh Token 삭제"""
+    return await logout_user(refresh_token)

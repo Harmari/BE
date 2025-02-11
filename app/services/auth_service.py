@@ -1,10 +1,21 @@
 import httpx
+
 from fastapi import HTTPException
 
 from app.core.config import settings
 from app.schemas.user_schema import UserCreate, UserDB
-from app.repository.user_repository import get_user_by_email, create_user, update_refresh_token
-from app.core.security import create_access_token, create_refresh_token
+from app.repository.user_repository import (
+    get_user_by_email,
+    create_user,
+    update_refresh_token,
+    get_refresh_token,
+    delete_refresh_token
+)
+from app.core.security import (
+    verify_refresh_token,
+    create_access_token,
+    create_refresh_token
+)
 
 # Google OAuth 관련 URL
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/auth"
@@ -75,7 +86,7 @@ async def get_google_user_info(access_token: str) -> dict:
 
         # 사용자 정보 반환
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail=f"사용자 정보 요청 실패: {response.text}")
+            raise HTTPException(status_code=400, detail=f"사용자 정보 오류: {response.text}")
         return response.json()
     
     # 예외처리(HTTPException)
@@ -93,13 +104,13 @@ async def authenticate_user(user_info: dict) -> dict:
 
         # 기존 사용자 확인
         existing_user = await get_user_by_email(email)
-        
+
         if existing_user:
-            # 사용자의 상태 확인 (banned 또는 inactive 사용자 로그인 차단)
+            # 사용자의 상태 확인
             if existing_user.get("status") in ["inactive", "banned"]:
                 raise HTTPException(status_code=403, detail="이용이 제한된 사용자입니다.")
 
-            # 기존 Refresh Token 확인 (없다면 새로 생성)
+            # 기존 Refresh Token 확인
             refresh_token = existing_user.get("refresh_token")
             if not refresh_token:
                 refresh_token = create_refresh_token({"sub": email})
@@ -150,3 +161,56 @@ async def authenticate_user(user_info: dict) -> dict:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"사용자 인증 실패: {str(e)}")
+
+async def refresh_access_token(refresh_token: str):
+    """Refresh Token을 이용해 Access Token 재발급"""
+    try:
+
+        # Refresh Token 검증
+        payload = verify_refresh_token(refresh_token)
+        email = payload.get("sub")
+
+        if not email:
+            raise HTTPException(status_code=401, detail="유효하지 않은 Refresh Token")
+
+        # 저장된 Refresh Token 확인
+        stored_refresh_token = await get_refresh_token(email)
+
+        if not stored_refresh_token:
+            raise HTTPException(status_code=401, detail="Refresh Token 없음")
+        
+        if stored_refresh_token != refresh_token:
+            raise HTTPException(status_code=401, detail="Refresh Token이 틀렸습니다.")
+
+        # 새로운 Access Token 발급
+        new_access_token = create_access_token({"sub": email})
+        return {"access_token": new_access_token, "token_type": "bearer"}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"토큰 갱신 실패: {str(e)}")
+
+async def logout_user(refresh_token: str):
+    """로그아웃 - Refresh Token 삭제"""
+    try:
+        # Refresh Token 검증
+        payload = verify_refresh_token(refresh_token)
+
+        # 사용자 이메일 추출
+        email = payload.get("sub")
+
+        # 사용자 이메일이 없는 경우 예외처리
+        if not email:
+            raise HTTPException(status_code=401, detail="refresh token이 유효하지 않음")
+
+        # Refresh Token 삭제
+        await delete_refresh_token(email)
+
+        return {"message": "로그아웃 완료"}
+    
+    # 예외처리(HTTPException, 그 외 예외)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"로그아웃 실패: {str(e)}")

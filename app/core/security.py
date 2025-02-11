@@ -49,7 +49,7 @@ def create_refresh_token(data: dict) -> str:
     
     # 예외처리(그 외 예외)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Refresh Token 생성 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"error : {str(e)}")
 
 def verify_access_token(token: str) -> dict:
     """JWT Access Token 검증"""
@@ -61,11 +61,11 @@ def verify_access_token(token: str) -> dict:
     
     # 예외처리(토큰 만료, 유효하지 않은 토큰, 그 외 예외)
     except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
+        raise HTTPException(status_code=401, detail="access token 만료")
     except JWTError:
-        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+        raise HTTPException(status_code=401, detail="유효하지 않은 access token")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"토큰 검증 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"error: {str(e)}")
 
 def verify_refresh_token(refresh_token: str) -> dict:
     """JWT Refresh Token 검증 (Access Token과 다른 서명 키 사용)"""
@@ -76,33 +76,25 @@ def verify_refresh_token(refresh_token: str) -> dict:
     
     # 예외처리(토큰 만료, 유효하지 않은 토큰, 그 외 예외)
     except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Refresh Token이 만료되었습니다.")
+        raise HTTPException(status_code=401, detail="refresh token 만료")
     except JWTError:
-        raise HTTPException(status_code=401, detail="유효하지 않은 Refresh Token입니다.")
+        raise HTTPException(status_code=401, detail="유효하지 않은 refresh token")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Refresh Token 검증 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"error : {str(e)}")
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
-    """현재 로그인한 사용자 확인 (JWT 검증)"""
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    """현재 로그인한 사용자 확인 (JWT 검증) + Access Token 자동 갱신"""
     try:
-        # 토큰이 없는경우
-        if not token:
-            raise HTTPException(status_code=401, detail="토큰이 제공되지 않았습니다.")
-
-        # 토큰 검증
+        # Access Token 검증
         payload = verify_access_token(token)
 
-        # 사용자 이메일 추출
-        user_email = payload.get("sub")
-        
-        # 사용자 이메일이 없는 경우 예외처리
-        if not user_email:
-            raise HTTPException(status_code=401, detail="토큰에서 사용자 정보를 찾을 수 없습니다.")
-        
         return payload
 
     # 예외처리(HTTPException, 그 외 예외)
     except HTTPException as e:
+        # Access Token이 만료되었을 경우 자동 갱신 로직
+        if e.detail == "토큰이 만료되었습니다.":
+            raise HTTPException(status_code=401, detail="access token 만료 refresh token 필요")
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"사용자 인증 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"error: {str(e)}")
