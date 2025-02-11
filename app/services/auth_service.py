@@ -65,23 +65,30 @@ async def authenticate_user(user_info: dict) -> dict:
     name = user_info.get("name", "Unknown")
     profile_image = user_info.get("picture")
 
+    # 기존 사용자 확인
     existing_user = await get_user_by_email(email)
 
     if existing_user:
-        # 기존 회원이면 JWT 발급 후 로그인
         token = create_access_token({"sub": email})
-        return {"access_token": token, "token_type": "bearer", "user": UserDB(**existing_user)}
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": UserDB(**existing_user)
+        }
 
+    # 신규 사용자 자동 회원가입
     new_user_data = UserCreate(
         email=email,
         google_id=google_id,
         name=name,
         profile_image=profile_image,
-        provider="google",
-        created_at=settings.CURRENT_DATETIME,  
-        updated_at=settings.CURRENT_DATETIME, 
+        provider="google"
     )
     new_user = await create_user(new_user_data)
 
     token = create_access_token({"sub": email})
-    return {"access_token": token, "token_type": "bearer", "user": new_user}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": new_user
+    }
