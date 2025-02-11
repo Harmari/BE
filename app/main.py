@@ -144,3 +144,6 @@ async def root():
         </body>
     </html>
     """
+
+
+# uvicorn app.main:app --reload
