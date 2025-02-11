@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -161,12 +161,32 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
     )
     return response
 
-async def get_reservation_by_user_id(user_id: str) -> List[Reservation]:
-    # 아이디 기준으로 예약 정보 조회
+# async def get_reservation_by_user_id(user_id: str) -> List[Reservation]:
+#     # 아이디 기준으로 예약 정보 조회
+#     reservations_cursor = collection.find({"user_id": ObjectId(user_id)})
+#     reservations = await reservations_cursor.to_list(length=None)
+
+#     # Convert each reservation to a Reservation object
+#     return [
+#         Reservation(
+#             **{
+#                 **reservation,
+#                 "id": str(reservation["_id"]),
+#                 "user_id": str(reservation["user_id"]),
+#                 "designer_id": str(reservation["designer_id"]),
+#             }
+#         )
+#         for reservation in reservations
+#     ]
+
+
+
+async def get_reservations_list_by_user_id(user_id: str) -> List[Reservation]:
+    # 사용자 ID로 예약 리스트 조회
     reservations_cursor = collection.find({"user_id": ObjectId(user_id)})
     reservations = await reservations_cursor.to_list(length=None)
 
-    # Convert each reservation to a Reservation object
+    print(reservations)
     return [
         Reservation(
             **{
@@ -178,3 +198,18 @@ async def get_reservation_by_user_id(user_id: str) -> List[Reservation]:
         )
         for reservation in reservations
     ]
+
+
+async def get_reservation_by_id(reservation_id: str) -> Optional[Reservation]:
+    # 아이디 기준으로 예약 정보 조회
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+
+    if reservation:
+        return Reservation(
+            **{
+                **reservation,
+                "id": str(reservation["_id"]),
+                "user_id": str(reservation["user_id"]),
+                "designer_id": str(reservation["designer_id"]),
+            }
+        )

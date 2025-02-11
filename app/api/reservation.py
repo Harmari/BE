@@ -3,7 +3,7 @@ from app.schemas.reservation_schema import (
     ReservationListResponse, ReservationListRequest, ReservationCreateResponse, ReservationCreateRequest
 )
 from app.services.reservation_service import (
-    reservation_list_service, reservation_create_service, get_reservation_by_user_id
+    reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id
 )
 
 router = APIRouter()
@@ -40,9 +40,31 @@ async def reservation_list_endpoint(request: ReservationCreateRequest):
             detail=f"오류 : {str(e)}"
         )
 
-@router.get("/get")
-async def read_reservation(user_id: str):
-    reservations = await get_reservation_by_user_id(user_id)
+
+# 예약 리스트
+@router.get("/list")
+async def read_reservations(user_id: str):
+    try:
+        reservations = await get_reservations_list_by_user_id(user_id)
+        return reservations
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"오류 : {str(e)}"
+        )
+
+# 상세 예약 정보
+@router.get("/{reservation_id}")
+async def read_reservation(reservation_id: str):
+    reservations = await get_reservation_by_id(reservation_id)
     if not reservations:
         raise HTTPException(status_code=404, detail="Reservation not found")
     return reservations
+
+
+# @router.get("/get")
+# async def read_reservation(user_id: str):
+#     reservations = await get_reservation_by_user_id(user_id)
+#     if not reservations:
+#         raise HTTPException(status_code=404, detail="Reservation not found")
+#     return reservations
