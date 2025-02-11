@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import test
+from app.api import test, reservationList, reservationRead
 from app.core.config import settings
 from app.db.session import get_database
 from app.api import auth
@@ -119,7 +119,8 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.getcwd(), "images")),
 # endpoint들을 설정하는 부분
 app.include_router(test.router, prefix="/test", tags=["test"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-
+app.include_router(reservationRead.router,prefix="/reservation", tags=["reservation"])
+app.include_router(reservationList.router, prefix="/reservation", tags=["reservation"])
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
