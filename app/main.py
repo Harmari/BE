@@ -9,11 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-
-from app.api import test, reservationList, reservationRead
 from app.core.config import settings
 from app.db.session import get_database
-from app.api import auth
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -116,11 +113,13 @@ if not os.path.exists(images_directory):
 # 외부에서 '/static'경로로 접근할 수 있음 -> images 폴더
 app.mount("/static", StaticFiles(directory=os.path.join(os.getcwd(), "images")), name="static")
 
-# endpoint들을 설정하는 부분
+
+# endpoint 설정하는 부분 하단에 import 후 추가
+from app.api import test, reservation, auth
+
 app.include_router(test.router, prefix="/test", tags=["test"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(reservationRead.router,prefix="/reservation", tags=["reservation"])
-app.include_router(reservationList.router, prefix="/reservation", tags=["reservation"])
+app.include_router(reservation.router,prefix="/reservation", tags=["reservation"])
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
