@@ -13,6 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from app.api import test, reservationList, reservationRead, designer
 from app.core.config import settings
 from app.db.session import get_database
+# 결제
+from app.api.payment.router import router as payment_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -125,6 +127,9 @@ app.include_router(reservationRead.router,prefix="/reservation", tags=["reservat
 app.include_router(reservationList.router, prefix="/reservation", tags=["reservation"])
 app.include_router(designer.designer_router, prefix="/designers", tags=["designers"])
 app.include_router(reservation.router,prefix="/reservation", tags=["reservation"])
+# 결제 
+app.include_router(payment_router)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root():

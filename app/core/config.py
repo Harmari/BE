@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     DATABASE_NAME: str
     DB_PW: str
     DB_USER: str
+    
+    # 카카오페이 설정 추가
+    KAKAO_PAY_CLIENT_ID: str
+    KAKAO_PAY_CLIENT_SECRET: str
+    KAKAO_PAY_SECRET_KEY_DEV: str
+    KAKAO_PAY_API_HOST: str
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str
