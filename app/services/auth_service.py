@@ -1,8 +1,11 @@
 import httpx
+
 from urllib.parse import urlencode
 from fastapi import HTTPException
+
 from app.core.config import settings
-from app.db.session import get_database
+from app.schemas.user_schema import UserCreate,UserDB
+from app.repository.user_repository import get_user_by_email, create_user
 from app.core.security import create_access_token
 
 # Google OAuth 관련 URL
@@ -57,16 +60,28 @@ async def get_google_user_info(access_token: str) -> dict:
 
 async def authenticate_user(user_info: dict) -> dict:
     """OAuth 인증 후 기존 회원 여부 확인 및 로그인 처리"""
-    db = get_database()
-    users_collection = db["users"]
-
     email = user_info["email"]
-    existing_user = await users_collection.find_one({"email": email})
+    google_id = user_info["id"]
+    name = user_info.get("name", "Unknown")
+    profile_image = user_info.get("picture")
+
+    existing_user = await get_user_by_email(email)
 
     if existing_user:
         # 기존 회원이면 JWT 발급 후 로그인
         token = create_access_token({"sub": email})
-        return {"access_token": token, "token_type": "bearer", "user": existing_user}
+        return {"access_token": token, "token_type": "bearer", "user": UserDB(**existing_user)}
 
-    # 회원가입 불가 → 에러 반환
-    raise HTTPException(status_code=403, detail="회원가입이 불가능한 계정입니다.")
+    new_user_data = UserCreate(
+        email=email,
+        google_id=google_id,
+        name=name,
+        profile_image=profile_image,
+        provider="google",
+        created_at=settings.CURRENT_DATETIME,  
+        updated_at=settings.CURRENT_DATETIME, 
+    )
+    new_user = await create_user(new_user_data)
+
+    token = create_access_token({"sub": email})
+    return {"access_token": token, "token_type": "bearer", "user": new_user}
