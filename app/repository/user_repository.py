@@ -53,7 +53,7 @@ async def update_refresh_token(email: str, refresh_token: str):
     
     # 사용자가 없을 경우 예외처리
     if not user:
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        raise HTTPException(status_code=404, detail="사용자가 없습니다.")
 
     # 사용자의 상태가 active가 아닐 경우 예외처리
     if user["status"] != "active":
@@ -67,4 +67,43 @@ async def update_refresh_token(email: str, refresh_token: str):
 
     # 업데이트 실패시 예외처리
     if update_result.modified_count == 0:
-        raise ValueError("사용자 refresh_token 업데이트 실패")
+        raise ValueError("업데이트 실패")
+
+async def get_refresh_token(email: str) -> str:
+    """사용자의 저장된 refresh_token 가져오기"""
+    db = get_database()
+    # 사용자 정보 저장을 위한 컬렉션
+    users_collection = db["users"]
+
+    # 사용자 정보 조회
+    user = await users_collection.find_one({"email": email})
+    
+    # 사용자가 없을 경우 예외처리
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자가 없습니다.")
+
+    return user.get("refresh_token")
+
+async def delete_refresh_token(email: str):
+    """사용자의 refresh_token 삭제 (로그아웃)"""
+    db = get_database()
+
+    # 사용자 정보 저장을 위한 컬렉션
+    users_collection = db["users"]
+
+    # 사용자 정보 조회
+    user = await users_collection.find_one({"email": email})
+
+    # 사용자가 없을 경우 예외처리
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자가 없습니다.")
+
+    # 사용자의 상태가 active가 아닐 경우 예외처리
+    update_result = await users_collection.update_one(
+        {"email": email},
+        {"$set": {"refresh_token": None, "updated_at": settings.CURRENT_DATETIME}}
+    )
+
+    # 업데이트 실패시 예외처리
+    if update_result.modified_count == 0:
+        raise ValueError("삭제 실패")
