@@ -51,6 +51,7 @@ class ReservationDetail(BaseModel):
     update_at: str
 
 class ReservationSimple(BaseModel):
+    id: str
     user_id: str
     designer_id: str
     mode: str
