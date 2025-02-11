@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     KAKAO_PAY_SECRET_KEY_DEV: str
     KAKAO_PAY_API_HOST: str
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+
+    # JWT
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+
     class Config:
         env_file = 'real.env'
         env_file_encoding = 'utf-8'
