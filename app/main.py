@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import test, reservationList, reservationRead, designer
+from app.api import test, reservation, auth, user
 from app.core.config import settings
 from app.db.session import get_database
 # 결제
