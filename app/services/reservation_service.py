@@ -222,7 +222,7 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     )
 
 
-async def get_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkResponse:
+async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkResponse:
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
     if not reservation:
         raise ValueError("Reservation not found")
@@ -231,7 +231,7 @@ async def get_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkRes
         raise ValueError("This user is not remote mode - not allowed to get google meet link")
     
     # 구글 밋 링크 생성 (목 데이터 사용)
-    google_meet_link = "https://meet.google.com/mockdata-google-meet-link"
+    google_meet_link = "https://meet.google.com/mockdata"
     
     # 데이터베이스에 링크 저장
     await collection.update_one(
