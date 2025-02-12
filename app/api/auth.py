@@ -33,10 +33,12 @@ async def auth_callback(request: Request, response: Response):
         # 사용자 정보 요청
         userinfo = await get_google_user_info(access_token)
 
-        # 로그인 성공 시 access_token과 refresh_token 반환
-        return await authenticate_user(userinfo, response)
+        # 로그인 성공 시 쿠키 설정
+        await authenticate_user(userinfo, response)
+
+        # React 프론트엔드로 리디렉트
+        return {"message": "로그인 성공"}
     
-    # 예외처리(HTTPException, 그 외 예외)
     except HTTPException as e:
         raise e
     except Exception as e:
