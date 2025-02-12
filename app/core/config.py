@@ -39,5 +39,9 @@ class Settings(BaseSettings):
         kst = pytz.timezone('Asia/Seoul')
         return datetime.now(kst).isoformat()
 
+    @property
+    def DESIGNER_REGIONS(self) -> list[str]:
+        return ['홍대/연남/합정', '강남/청담/압구정', '성수/건대', '서울 전체']
+
 
 settings = Settings()
