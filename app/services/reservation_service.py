@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import pytz
 from dateutil.relativedelta import relativedelta
@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 from bson import ObjectId
 
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
-    ReservationCreateResponse, ReservationCreateRequest, Reservation
+    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple
 from app.db.session import get_database
 
 db = get_database()
@@ -161,14 +161,17 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
     )
     return response
 
-async def get_reservation_by_user_id(user_id: str) -> List[Reservation]:
-    # 아이디 기준으로 예약 정보 조회
-    reservations_cursor = collection.find({"user_id": ObjectId(user_id)})
+
+
+async def get_reservations_list_by_user_id(user_id: str) -> List[ReservationSimple]:
+    # 사용자 ID로 예약 리스트 조회
+    reservations_cursor = collection.find({"user_id": ObjectId(user_id)}).sort("reservation_date_time", -1)
+    # reservations_cursor = collection.find({"user_id": user_id})
     reservations = await reservations_cursor.to_list(length=None)
 
-    # Convert each reservation to a Reservation object
+    print(reservations)
     return [
-        Reservation(
+        ReservationSimple(
             **{
                 **reservation,
                 "id": str(reservation["_id"]),
@@ -178,3 +181,47 @@ async def get_reservation_by_user_id(user_id: str) -> List[Reservation]:
         )
         for reservation in reservations
     ]
+
+
+async def get_reservation_by_id(reservation_id: str) -> Optional[ReservationDetail]:
+    # 아이디 기준으로 예약 정보 조회
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+
+    if reservation:
+        return ReservationDetail(
+            **{
+                **reservation,
+                "id": str(reservation["_id"]),
+                "user_id": str(reservation["user_id"]),
+                "designer_id": str(reservation["designer_id"]),
+            }
+        )
+    
+
+async def update_reservation_status(reservation_id: str) -> Optional[ReservationDetail]:
+    # 예약 ID로 예약 정보 조회
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+
+    if not reservation:
+        return None
+    
+    # 현재 상태에 따라 상태 변경
+    current_status = reservation["status"]
+    new_status = "예약취소" 
+
+    # 상태 업데이트
+    await collection.update_one(
+        {"_id": ObjectId(reservation_id)},
+        {"$set": {"status": new_status}}
+    )
+
+    # 업데이트된 예약 정보 반환
+    updated_reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+    return ReservationDetail(
+        **{
+            **updated_reservation,
+            "id": str(updated_reservation["_id"]),
+            "user_id": str(updated_reservation["user_id"]),
+            "designer_id": str(updated_reservation["designer_id"]),
+        }
+    )
