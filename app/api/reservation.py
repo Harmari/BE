@@ -78,8 +78,8 @@ async def read_reservation(reservation_id: str):
             detail=f"오류 : {str(e)}"
         )
 
-@router.patch("/toggle_status", response_model=ReservationDetail)
-async def toggle_reservation_status_endpoint(reservation_id: str):
+@router.patch("/cancel", response_model=ReservationDetail)
+async def cancel_reservation_endpoint(reservation_id: str):
     try:
         updated_reservation = await update_reservation_status(reservation_id)
         if not updated_reservation:
