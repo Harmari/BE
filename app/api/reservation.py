@@ -3,7 +3,7 @@ from app.schemas.reservation_schema import (
     ReservationListResponse, ReservationListRequest, ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple
 )
 from app.services.reservation_service import (
-    reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id
+    reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id, update_reservation_status
 )
 from typing import List
 
@@ -70,6 +70,24 @@ async def read_reservation(reservation_id: str):
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"오류 : {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"오류 : {str(e)}"
+        )
+
+@router.patch("/cancel", response_model=ReservationDetail)
+async def cancel_reservation_endpoint(reservation_id: str):
+    try:
+        updated_reservation = await update_reservation_status(reservation_id)
+        if not updated_reservation:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
+        return updated_reservation
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"오류 : {str(e)}"
         )
     except Exception as e:
