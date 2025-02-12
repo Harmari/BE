@@ -166,10 +166,8 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
 async def get_reservations_list_by_user_id(user_id: str) -> List[ReservationSimple]:
     # 사용자 ID로 예약 리스트 조회
     reservations_cursor = collection.find({"user_id": ObjectId(user_id)}).sort("reservation_date_time", -1)
-    # reservations_cursor = collection.find({"user_id": user_id})
     reservations = await reservations_cursor.to_list(length=None)
 
-    print(reservations)
     return [
         ReservationSimple(
             **{
@@ -205,10 +203,7 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     if not reservation:
         return None
     
-    # 현재 상태에 따라 상태 변경
-    current_status = reservation["status"]
     new_status = "예약취소" 
-
     # 상태 업데이트
     await collection.update_one(
         {"_id": ObjectId(reservation_id)},
@@ -231,7 +226,7 @@ async def get_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkRes
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
     if not reservation:
         raise ValueError("Reservation not found")
-    print(reservation)
+    
     if reservation["mode"] != "비대면":
         raise ValueError("Invalid reservation status or mode")
     
