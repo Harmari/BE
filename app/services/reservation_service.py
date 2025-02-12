@@ -205,11 +205,9 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     if not reservation:
         return None
     
-
     # 현재 상태에 따라 상태 변경
     current_status = reservation["status"]
-    new_status = "예약취소" if current_status == "예약완료" else "예약완료"
-
+    new_status = "예약취소" 
 
     # 상태 업데이트
     await collection.update_one(
