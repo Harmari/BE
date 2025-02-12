@@ -13,6 +13,30 @@ class Settings(BaseSettings):
     DATABASE_NAME: str
     DB_PW: str
     DB_USER: str
+    
+    # 카카오페이 설정 추가
+    KAKAO_PAY_CLIENT_ID: str
+    KAKAO_PAY_CLIENT_SECRET: str
+    KAKAO_PAY_SECRET_KEY_DEV: str
+    KAKAO_PAY_API_HOST: str
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+
+    # JWT
+    SECRET_KEY: str
+    REFRESH_SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
+
+    # kakopay
+    KAKAO_PAY_CLIENT_ID: str
+    KAKAO_PAY_CLIENT_SECRET: str
+    KAKAO_PAY_SECRET_KEY_DEV: str
+    KAKAO_PAY_API_HOST: str
 
     class Config:
         env_file = 'real.env'
