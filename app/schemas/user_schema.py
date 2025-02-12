@@ -11,8 +11,9 @@ class UserBase(BaseModel):
     profile_image: Optional[str] = None
     provider: str = "google"
     status: str = "active"
-    created_at: str = settings.CURRENT_DATETIME  
-    updated_at: str = settings.CURRENT_DATETIME  
+    refresh_token: Optional[str] = None
+    created_at: str = settings.CURRENT_DATETIME
+    updated_at: str = settings.CURRENT_DATETIME
 
 class UserCreate(UserBase):
     """새로운 사용자 생성 요청 모델"""
@@ -20,7 +21,7 @@ class UserCreate(UserBase):
 
 class UserDB(UserBase):
     """MongoDB에서 조회되는 사용자 모델"""
+    # 몽고디비 id 문자열 변환
     id: Optional[str] = None 
-
     class Config:
         from_attributes = True
