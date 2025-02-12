@@ -37,7 +37,6 @@ class ReservationCreateResponse(BaseModel):
 
 
 
-
 class ReservationDetail(BaseModel):
     id: str
     user_id: str
