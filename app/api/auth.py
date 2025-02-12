@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Response
 from app.services.auth_service import (
     get_google_auth_url,
     get_google_access_token,
@@ -16,7 +16,7 @@ async def login():
     return await get_google_auth_url()
 
 @router.get("/callback")
-async def auth_callback(request: Request):
+async def auth_callback(request: Request, response: Response):
     """Google OAuth 리디렉션 처리 후 로그인"""
     try:
         # 인증 코드 가져오기
@@ -33,16 +33,8 @@ async def auth_callback(request: Request):
         # 사용자 정보 요청
         userinfo = await get_google_user_info(access_token)
 
-        # 기존 회원 여부 확인 및 로그인 처리
-        auth_data = await authenticate_user(userinfo)
-
         # 로그인 성공 시 access_token과 refresh_token 반환
-        return {
-            "access_token": auth_data["access_token"],
-            "refresh_token": auth_data["refresh_token"],
-            "token_type": auth_data["token_type"],
-            "user": auth_data["user"]
-        }
+        return await authenticate_user(userinfo, response)
     
     # 예외처리(HTTPException, 그 외 예외)
     except HTTPException as e:
@@ -51,11 +43,11 @@ async def auth_callback(request: Request):
         raise HTTPException(status_code=500, detail=f"error: {str(e)}")
 
 @router.post("/refresh")
-async def refresh_token(refresh_token: str):
+async def refresh_token(request: Request, response: Response):
     """Refresh Token을 이용한 Access Token 재발급"""
-    return await refresh_access_token(refresh_token)
+    return await refresh_access_token(request, response) 
 
 @router.post("/logout")
-async def logout(refresh_token: str):
+async def logout(response: Response):
     """로그아웃 - Refresh Token 삭제"""
-    return await logout_user(refresh_token)
+    return await logout_user(response)
