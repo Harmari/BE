@@ -196,3 +196,34 @@ async def get_reservation_by_id(reservation_id: str) -> Optional[ReservationDeta
                 "designer_id": str(reservation["designer_id"]),
             }
         )
+    
+
+async def update_reservation_status(reservation_id: str) -> Optional[ReservationDetail]:
+    # 예약 ID로 예약 정보 조회
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+
+    if not reservation:
+        return None
+    
+
+    # 현재 상태에 따라 상태 변경
+    current_status = reservation["status"]
+    new_status = "예약취소" if current_status == "예약완료" else "예약완료"
+
+
+    # 상태 업데이트
+    await collection.update_one(
+        {"_id": ObjectId(reservation_id)},
+        {"$set": {"status": new_status}}
+    )
+
+    # 업데이트된 예약 정보 반환
+    updated_reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+    return ReservationDetail(
+        **{
+            **updated_reservation,
+            "id": str(updated_reservation["_id"]),
+            "user_id": str(updated_reservation["user_id"]),
+            "designer_id": str(updated_reservation["designer_id"]),
+        }
+    )
