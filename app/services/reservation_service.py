@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 from bson import ObjectId
 
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
-    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple
+    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
 from app.db.session import get_database
 
 db = get_database()
@@ -225,3 +225,23 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
             "designer_id": str(updated_reservation["designer_id"]),
         }
     )
+
+
+async def get_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkResponse:
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+    if not reservation:
+        raise ValueError("Reservation not found")
+    print(reservation)
+    if reservation["mode"] != "비대면":
+        raise ValueError("Invalid reservation status or mode")
+    
+    # 구글 밋 링크 생성 (목 데이터 사용)
+    google_meet_link = "https://meet.google.com/mockdata-google-meet-link"
+    
+    # 데이터베이스에 링크 저장
+    await collection.update_one(
+        {"_id": ObjectId(reservation_id)},
+        {"$set": {"google_meet_link": google_meet_link}}
+    )
+    
+    return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
