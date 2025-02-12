@@ -27,8 +27,16 @@ class Settings(BaseSettings):
 
     # JWT
     SECRET_KEY: str
+    REFRESH_SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
+
+    # kakopay
+    KAKAO_PAY_CLIENT_ID: str
+    KAKAO_PAY_CLIENT_SECRET: str
+    KAKAO_PAY_SECRET_KEY_DEV: str
+    KAKAO_PAY_API_HOST: str
 
     class Config:
         env_file = 'real.env'
