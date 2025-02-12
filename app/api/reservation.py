@@ -5,7 +5,7 @@ from app.schemas.reservation_schema import (
 )
 from app.services.reservation_service import (
     reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id, \
-    update_reservation_status, get_google_meet_link_service
+    update_reservation_status, generate_google_meet_link_service
 )
 from typing import List
 
@@ -98,10 +98,10 @@ async def cancel_reservation_endpoint(reservation_id: str):
             detail=f"오류 : {str(e)}"
         )
     
-@router.get("/get_google_meet_link", response_model=GoogleMeetLinkResponse)
-async def get_google_meet_link(reservation_id: str):
+@router.patch("/generate_google_meet_link", response_model=GoogleMeetLinkResponse)
+async def generate_google_meet_link(reservation_id: str):
     try:
-        return await get_google_meet_link_service(reservation_id)
+        return await generate_google_meet_link_service(reservation_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
