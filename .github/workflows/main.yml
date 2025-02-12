@@ -30,6 +30,12 @@ jobs:
           echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> real.env
           echo "DB_USER=${{ secrets.DB_USER }}" >> real.env
           echo "DB_PW=${{ secrets.DB_PW }}" >> real.env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> real.env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> real.env
+          echo "GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}" >> real.env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> real.env
+          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> real.env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> real.env
 
       - name: Copy project files to remote server
         run: |
