@@ -11,6 +11,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.db.session import get_database
+# 결제
+from app.api.payment.router import router as payment_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -121,6 +123,10 @@ app.include_router(test.router, prefix="/test", tags=["test"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(reservation.router,prefix="/reservation", tags=["reservation"])
 
+# 결제 
+app.include_router(payment_router)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     return """
@@ -134,3 +140,6 @@ async def root():
         </body>
     </html>
     """
+
+
+# uvicorn app.main:app --reload
