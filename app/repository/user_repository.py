@@ -59,15 +59,18 @@ async def update_refresh_token(email: str, refresh_token: str):
     if user["status"] != "active":
         raise HTTPException(status_code=403, detail="이용이 제한된 사용자입니다.")
 
-    # 사용자의 refresh_token 업데이트
-    update_result = await users_collection.update_one(
-        {"email": email},
-        {"$set": {"refresh_token": refresh_token, "updated_at": settings.CURRENT_DATETIME}}
-    )
+    # 기존 refresh_token과 새로운 refresh_token이 다를 경우 업데이트
+    if user.get("refresh_token") != refresh_token:
 
-    # 업데이트 실패시 예외처리
-    if update_result.modified_count == 0:
-        raise ValueError("업데이트 실패")
+        # 업데이트
+        update_result = await users_collection.update_one(
+            {"email": email},
+            {"$set": {"refresh_token": refresh_token, "updated_at": settings.CURRENT_DATETIME}}
+        )
+        
+        # 업데이트 실패시 예외처리
+        if update_result.modified_count == 0:
+            raise ValueError("업데이트 실패")
 
 async def get_refresh_token(email: str) -> str:
     """사용자의 저장된 refresh_token 가져오기"""
@@ -84,7 +87,7 @@ async def get_refresh_token(email: str) -> str:
 
     return user.get("refresh_token")
 
-async def delete_refresh_token(email: str):
+async def delete_refresh_token(email: str, refresh_token: str):
     """사용자의 refresh_token 삭제 (로그아웃)"""
     db = get_database()
 
@@ -97,6 +100,10 @@ async def delete_refresh_token(email: str):
     # 사용자가 없을 경우 예외처리
     if not user:
         raise HTTPException(status_code=404, detail="사용자가 없습니다.")
+    
+    # 기존 refresh_token과 새로운 refresh_token이 다를 경우 예외처리
+    if user.get("refresh_token") != refresh_token: 
+        raise HTTPException(status_code=401, detail="유효하지 않은 Refresh Token입니다.")
 
     # 사용자의 상태가 active가 아닐 경우 예외처리
     update_result = await users_collection.update_one(
