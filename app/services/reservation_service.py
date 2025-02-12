@@ -228,7 +228,7 @@ async def get_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkRes
         raise ValueError("Reservation not found")
     
     if reservation["mode"] != "비대면":
-        raise ValueError("Invalid reservation status or mode")
+        raise ValueError("This user is not remote mode - not allowed to get google meet link")
     
     # 구글 밋 링크 생성 (목 데이터 사용)
     google_meet_link = "https://meet.google.com/mockdata-google-meet-link"
