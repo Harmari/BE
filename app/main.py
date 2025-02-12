@@ -17,8 +17,7 @@ from app.db.session import get_database
 # 결제
 from app.api.payment.router import router as payment_router
 from app.api import test, reservationList, reservationRead, auth, user
-from app.core.config import settings
-from app.db.session import get_database
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -133,6 +132,9 @@ app.include_router(designer.designer_router, prefix="/designers", tags=["designe
 app.include_router(reservation.router,prefix="/reservation", tags=["reservation"])
 # 결제 
 app.include_router(payment_router)
+app.include_router(reservationRead.router,prefix="/reservation", tags=["reservation"])
+app.include_router(reservationList.router, prefix="/reservation", tags=["reservation"])
+app.include_router(designer.designer_router, prefix="/designers", tags=["designers"])
 
 app.include_router(user.router, prefix="/user", tags=["user"])
 
