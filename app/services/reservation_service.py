@@ -109,18 +109,18 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         raise ValueError("user_id 없어.")
 
     # 대면 예약인 경우 google_meet_link는 비워져 있어야 함
-    if request.mode == "대면":
-        if request.google_meet_link.strip():
-            logger.error(f"대면 예약 시 google_meet_link 오류: {request.google_meet_link}")
-            raise ValueError("대면 예약인 경우 google_meet_link가 빈값이여야 함.")
-    elif request.mode == "비대면":
-        # 비대면 예약인 경우 google_meet_link는 필수
-        if not request.google_meet_link.strip():
-            logger.error("비대면 예약 시 google_meet_link 누락")
-            raise ValueError("비대면 예약인 경우 google_meet_link가 필수입니다.")
-    else:
-        logger.error(f"예약 mode 오류: {request.mode}")
-        raise ValueError("예약 mode는 '대면' 또는 '비대면'이어야 합니다.")
+    # if request.mode == "대면":
+    #     if request.google_meet_link.strip():
+    #         logger.error(f"대면 예약 시 google_meet_link 오류: {request.google_meet_link}")
+    #         raise ValueError("대면 예약인 경우 google_meet_link가 빈값이여야 함.")
+    # elif request.mode == "비대면":
+    #     # 비대면 예약인 경우 google_meet_link는 필수
+    #     if not request.google_meet_link.strip():
+    #         logger.error("비대면 예약 시 google_meet_link 누락")
+    #         raise ValueError("비대면 예약인 경우 google_meet_link가 필수입니다.")
+    # else:
+    #     logger.error(f"예약 mode 오류: {request.mode}")
+    #     raise ValueError("예약 mode는 '대면' 또는 '비대면'이어야 합니다.")
 
     # 동일예약 확인
     existing = await collection.find_one({
@@ -155,7 +155,6 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         designer_id=request.designer_id,
         user_id=request.user_id,
         reservation_date_time=dt_str,
-        google_meet_link=request.google_meet_link,
         mode=request.mode,
         status="예약완료"
     )
