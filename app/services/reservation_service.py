@@ -6,14 +6,12 @@ from dateutil.relativedelta import relativedelta
 
 from bson import ObjectId
 
-from app.core.config import settings
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
     ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
 from app.db.session import get_database
 
 db = get_database()
 collection = db["reservations"]
-current_time_str = settings.CURRENT_DATETIME
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,20 +59,20 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
 async def reservation_create_service(request: ReservationCreateRequest) -> ReservationCreateResponse:
     dt_str = request.reservation_date_time.strip()
 
-    # 날짜 형식 검증
+    # 실제 존재할 수 있는 일자인지 검증
     try:
         dt_obj = datetime.strptime(dt_str, "%Y%m%d%H%M")
     except Exception as e:
         logger.error(f"reservation_date_time 파싱 오류: {dt_str} - {e}")
         raise ValueError("reservation_date_time 형식이 올바르지 않습니다.")
 
-    # 30분 단위 검증
+    # 30분 단위 인지 체크
     minute_part = dt_str[-2:]
     if minute_part not in ("00", "30"):
         logger.error(f"reservation_date_time 분 단위 오류: {dt_str}")
         raise ValueError("reservation_date_time의 분은 반드시 '00' 또는 '30'이어야 합니다.")
 
-    # 시간 범위 체크 10:00 ~ 20:00 (20시인 경우 분은 00)
+    # 시간 범위 체크 10:00 ~ 20:00
     try:
         hour_int = int(dt_str[8:10])
         minute_int = int(dt_str[10:12])
@@ -85,6 +83,7 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
     if hour_int < 10 or hour_int > 20:
         logger.error(f"예약 가능한 시간 범위 오류: {dt_str}")
         raise ValueError("예약 시간은 10시부터 20시 사이여야 합니다.")
+    # 오후 20시인 경우, 분이 반드시 00
     if hour_int == 20 and minute_int != 0:
         logger.error(f"예약 시간 오류 (20시까지만 허용): {dt_str}")
         raise ValueError("예약 시간은 20시까지만 가능합니다.")
@@ -103,17 +102,19 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         logger.error(f"Invalid designer_id: {request.designer_id} - {e}")
         raise ValueError("designer_id 없어.")
     try:
-        user_obj_id = request.user_id  # ObjectId 변환 필요시 추가
+        # user_obj_id = ObjectId(request.user_id)
+        user_obj_id = request.user_id
     except Exception as e:
         logger.error(f"Invalid user_id: {request.user_id} - {e}")
         raise ValueError("user_id 없어.")
 
-    # mode 및 google_meet_link 검증
+    # 대면 예약인 경우 google_meet_link는 비워져 있어야 함
     if request.mode == "대면":
         if request.google_meet_link.strip():
             logger.error(f"대면 예약 시 google_meet_link 오류: {request.google_meet_link}")
-            raise ValueError("대면 예약인 경우 google_meet_link가 빈값이어야 합니다.")
+            raise ValueError("대면 예약인 경우 google_meet_link가 빈값이여야 함.")
     elif request.mode == "비대면":
+        # 비대면 예약인 경우 google_meet_link는 필수
         if not request.google_meet_link.strip():
             logger.error("비대면 예약 시 google_meet_link 누락")
             raise ValueError("비대면 예약인 경우 google_meet_link가 필수입니다.")
@@ -121,18 +122,20 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         logger.error(f"예약 mode 오류: {request.mode}")
         raise ValueError("예약 mode는 '대면' 또는 '비대면'이어야 합니다.")
 
-    # _id가 없는 경우, 중복 예약 여부 체크 (동일 디자이너, 동일 시간)
-    if not request.reservation_id:
-        existing = await collection.find_one({
-            "designer_id": designer_obj_id,
-            "reservation_date_time": dt_str
-        })
-        if existing:
-            logger.error(f"동일 예약 존재: {dt_str}")
-            raise ValueError("해당 일시에 이미 예약이 존재합니다.")
+    # 동일예약 확인
+    existing = await collection.find_one({
+        "designer_id": designer_obj_id,
+        "reservation_date_time": dt_str
+    })
+    if existing:
+        logger.error(f"동일 예약 존재: {dt_str}")
+        raise ValueError("해당 일시에 이미 예약이 존재합니다.")
 
-    # 업데이트 또는 삽입할 데이터 준비 (업데이트 시 create_at는 기존 값 유지)
-    update_data = {
+    # 오늘날짜 구해서 스트링해~
+    now_kst = datetime.now(kst)
+    created_at_str = now_kst.strftime("%Y%m%d%H%M")
+
+    reservation_doc = {
         "designer_id": designer_obj_id,
         "user_id": user_obj_id,
         "reservation_date_time": dt_str,
@@ -140,30 +143,13 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         "google_meet_link": request.google_meet_link.strip() if request.google_meet_link.strip() else None,
         "mode": request.mode,
         "status": "예약완료",
-        "update_at": current_time_str,
+        "create_at": created_at_str,
+        "update_at": created_at_str
     }
 
-    if not request.reservation_id:
-        # _id가 없는 경우 생성
-        update_data["create_at"] = current_time_str
-        insert_result = await collection.insert_one(update_data)
-        new_id = insert_result.inserted_id
-    else:
-        # _id가 제공된 경우 업데이트
-        existing = await collection.find_one({"_id": ObjectId(request.reservation_id)})
-        if existing:
-            await collection.update_one(
-                {"_id": ObjectId(request.reservation_id)},
-                {"$set": update_data}
-            )
-            new_id = request.reservation_id
-        else:
-            # 만약 해당 _id가 없으면 새 문서를 삽입 (create_at 추가)
-            update_data["create_at"] = current_time_str
-            insert_result = await collection.insert_one(update_data)
-            new_id = insert_result.inserted_id
-
-    logger.info(f"Reservation created/updated with id: {new_id}")
+    # 드디어 들어가는 데이터 1줄
+    insert_result = await collection.insert_one(reservation_doc)
+    logger.info(f"Reservation created with id: {insert_result.inserted_id}")
 
     response = ReservationCreateResponse(
         designer_id=request.designer_id,
@@ -174,6 +160,7 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         status="예약완료"
     )
     return response
+
 
 
 async def get_reservations_list_by_user_id(user_id: str) -> List[ReservationSimple]:
@@ -253,20 +240,3 @@ async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLi
     )
     
     return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
-
-
-async def reservation_pay_ready_service() -> dict:
-    new_id = ObjectId()
-
-    await collection.update_one(
-        {"_id": new_id},
-        {"$set": {
-            "status": "pay_ready",
-            "create_at": current_time_str,
-            "update_at": current_time_str,
-        }},
-        upsert=True
-    )
-
-    logger.info(f"Reservation pay_ready created with id: {new_id}")
-    return {"_id": str(new_id)}

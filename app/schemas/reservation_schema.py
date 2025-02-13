@@ -27,6 +27,7 @@ class ReservationCreateRequest(BaseModel):
     consulting_fee: str
     google_meet_link: str
     mode: str
+    status: str
 
 class ReservationCreateResponse(BaseModel):
     user_id: str
