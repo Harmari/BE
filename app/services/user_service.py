@@ -1,5 +1,5 @@
 from fastapi import HTTPException, Response, Request
-from app.repository.user_repository import get_user_by_email, create_user, update_refresh_token, delete_user
+from app.repository.user_repository import get_user_by_email, create_user, delete_user
 from app.core.security import (
     create_access_token, 
     create_refresh_token, 
@@ -19,10 +19,9 @@ async def authenticate_user(user_info: dict, response: Response) -> dict:
         if existing_user.get("status") in ["inactive", "banned"]:
             raise HTTPException(status_code=403, detail="사용이 제한된 사용자")
 
-        refresh_token = existing_user.get("refresh_token") or create_refresh_token({"sub": email})
-        await update_refresh_token(email, refresh_token)
-
+        refresh_token = create_refresh_token({"sub": email})
         access_token = create_access_token({"sub": email})
+
         set_auth_cookies(response, access_token, refresh_token)
 
         return {"message": "로그인 성공"}
@@ -34,7 +33,6 @@ async def authenticate_user(user_info: dict, response: Response) -> dict:
         profile_image=user_info.get("picture"),
         provider="google",
         status="active",
-        refresh_token=None,
         created_at=settings.CURRENT_DATETIME,
         updated_at=settings.CURRENT_DATETIME
     )
