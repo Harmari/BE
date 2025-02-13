@@ -58,6 +58,7 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
 
 async def reservation_create_service(request: ReservationCreateRequest) -> ReservationCreateResponse:
     dt_str = request.reservation_date_time.strip()
+    now_kst = datetime.now(kst)
 
     # 실제 존재할 수 있는 일자인지 검증
     try:
@@ -65,6 +66,16 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
     except Exception as e:
         logger.error(f"reservation_date_time 파싱 오류: {dt_str} - {e}")
         raise ValueError("reservation_date_time 형식이 올바르지 않습니다.")
+
+    # 예약 시간이 현재 이후인지
+    if dt_obj <= now_kst:
+        logger.error(f"예약 시간이 현재보다 이전입니다: {dt_str}")
+        raise ValueError("예약 시간은 현재 시간 이후여야 합니다.")
+
+    # 예약은 최대 3개월 이내로 제한
+    if dt_obj > now_kst + relativedelta(months=3):
+        logger.error(f"예약 시간이 3개월 이상 미래입니다: {dt_str}")
+        raise ValueError("예약은 3개월 이내로 가능합니다.")
 
     # 30분 단위 인지 체크
     minute_part = dt_str[-2:]
@@ -95,18 +106,31 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         logger.error(f"Invalid consulting_fee: {request.consulting_fee} - {e}")
         raise ValueError("consulting_fee는 정수 값이어야 합니다.")
 
-    # designer_id, user_id 체크
+    # designer_id 체크
     try:
         designer_obj_id = ObjectId(request.designer_id)
     except Exception as e:
         logger.error(f"Invalid designer_id: {request.designer_id} - {e}")
         raise ValueError("designer_id 없어.")
+
+    # 유효한 designer_id 인지 조회
+    designer = await db["designers"].find_one({"_id": designer_obj_id})
+    if not designer:
+        logger.error(f"디자이너를 찾을 수 없음: {request.designer_id}")
+        raise ValueError("해당 designer_id에 해당하는 디자이너가 존재하지 않습니다.")
+
+    # user_id 체크
     try:
-        # user_obj_id = ObjectId(request.user_id)
-        user_obj_id = request.user_id
+        user_obj_id = ObjectId(request.user_id)
     except Exception as e:
         logger.error(f"Invalid user_id: {request.user_id} - {e}")
         raise ValueError("user_id 없어.")
+
+    # user_id 실존 조회
+    user = await db["users"].find_one({"_id": user_obj_id})
+    if not user:
+        logger.error(f"사용자를 찾을 수 없음: {request.user_id}")
+        raise ValueError("해당 user_id에 해당하는 사용자가 존재하지 않습니다.")
 
     # 대면 예약인 경우 google_meet_link는 비워져 있어야 함
     if request.mode == "대면":
@@ -131,10 +155,6 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         logger.error(f"동일 예약 존재: {dt_str}")
         raise ValueError("해당 일시에 이미 예약이 존재합니다.")
 
-    # 오늘날짜 구해서 스트링해~
-    now_kst = datetime.now(kst)
-    created_at_str = now_kst.strftime("%Y%m%d%H%M")
-
     reservation_doc = {
         "designer_id": designer_obj_id,
         "user_id": user_obj_id,
@@ -143,8 +163,8 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         "google_meet_link": request.google_meet_link.strip() if request.google_meet_link.strip() else None,
         "mode": request.mode,
         "status": "예약완료",
-        "create_at": created_at_str,
-        "update_at": created_at_str
+        "create_at": settings.CURRENT_DATETIME,
+        "update_at": settings.CURRENT_DATETIME
     }
 
     # 드디어 들어가는 데이터 1줄
