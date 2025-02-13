@@ -12,65 +12,36 @@ from app.core.config import settings
 
 async def authenticate_user(user_info: dict, response: Response) -> dict:
     """OAuth 인증 후 기존 회원 여부 확인 및 로그인 처리"""
-    try:
-        # 사용자 정보 추출
-        email = user_info["email"]
-        google_id = user_info["id"]
-        name = user_info.get("name", "Unknown")
-        profile_image = user_info.get("picture")
+    email = user_info["email"]
+    existing_user = await get_user_by_email(email)
 
-        # 기존 사용자 확인
-        existing_user = await get_user_by_email(email)
+    if existing_user:
+        if existing_user.get("status") in ["inactive", "banned"]:
+            raise HTTPException(status_code=403, detail="사용이 제한된 사용자")
 
-        if existing_user:
-            # 사용자의 상태 확인
-            if existing_user.get("status") in ["inactive", "banned"]:
-                raise HTTPException(status_code=403, detail="사용이 제한된 사용자")
-
-            # 기존 Refresh Token 확인
-            refresh_token = existing_user.get("refresh_token")
-            if not refresh_token:
-                refresh_token = create_refresh_token({"sub": email})
-                await update_refresh_token(email, refresh_token)
-
-            # JWT Access Token 발급
-            access_token = create_access_token({"sub": email})
-
-            return {"message": "로그인 성공"}
-        
-        # 신규 사용자 자동 회원가입 
-        new_user_data = UserCreate(
-            email=email,
-            google_id=google_id,
-            name=name,
-            profile_image=profile_image,
-            provider="google",
-            status="active",
-            refresh_token=None,  
-            created_at=settings.CURRENT_DATETIME,
-            updated_at=settings.CURRENT_DATETIME
-        )
-
-        # 사용자 등록
-        new_user = await create_user(new_user_data)
-
-        # JWT 토큰 발급
-        access_token = create_access_token({"sub": email})
-        refresh_token = create_refresh_token({"sub": email})
-
-        # Refresh Token을 DB에 저장
+        refresh_token = existing_user.get("refresh_token") or create_refresh_token({"sub": email})
         await update_refresh_token(email, refresh_token)
 
-        # 쿠키에 토큰 설정
-        set_auth_cookies(response, access_token, refresh_token) 
+        access_token = create_access_token({"sub": email})
+        set_auth_cookies(response, access_token, refresh_token)
 
-        return {"message": "회원가입 및 로그인 성공"}
-    
-    # 예외처리(HTTPException, 그 외 예외)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"사용자 인증 실패: {str(e)}")
+        return {"message": "로그인 성공"}
+
+    new_user = UserCreate(
+        email=email,
+        google_id=user_info["id"],
+        name=user_info.get("name", "Unknown"),
+        profile_image=user_info.get("picture"),
+        provider="google",
+        status="active",
+        refresh_token=None,
+        created_at=settings.CURRENT_DATETIME,
+        updated_at=settings.CURRENT_DATETIME
+    )
+
+    await create_user(new_user)
+
+    return {"message": "회원가입 성공"}
 
 async def refresh_access_token(request: Request, response: Response):
     """Refresh Token을 이용해 Access Token 재발급"""
