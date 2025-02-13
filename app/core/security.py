@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt, ExpiredSignatureError
-from fastapi import Depends, HTTPException, Request, Response 
+from fastapi import HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
@@ -54,12 +54,7 @@ def create_refresh_token(data: dict) -> str:
 def verify_access_token(token: str) -> dict:
     """JWT Access Token 검증"""
     try:
-        # 토큰 디코딩
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
-        return payload
-    
-    # 예외처리(토큰 만료, 유효하지 않은 토큰, 그 외 예외)
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="access token 만료")
     except JWTError:
@@ -70,11 +65,7 @@ def verify_access_token(token: str) -> dict:
 def verify_refresh_token(refresh_token: str) -> dict:
     """JWT Refresh Token 검증 (Access Token과 다른 서명 키 사용)"""
     try:
-        # 토큰 검증
-        payload = jwt.decode(refresh_token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    
-    # 예외처리(토큰 만료, 유효하지 않은 토큰, 그 외 예외)
+        return jwt.decode(refresh_token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="refresh token 만료")
     except JWTError:
@@ -86,21 +77,12 @@ async def get_current_user(request: Request) -> dict:
     """현재 로그인한 사용자 확인 (JWT 검증) + Access Token 자동 갱신"""
     try:
         # 쿠키에서 Access Token 가져오기 
-        access_token = request.cookies.get("access_token") 
-
-        # Access Token이 없을 경우 예외처리
+        access_token = request.cookies.get("access_token")
         if not access_token:
-            raise HTTPException(status_code=401, detail="토큰이 제공되지 않았습니다.") 
+            raise HTTPException(status_code=401, detail="Access Token이 제공되지 않았습니다.")
 
-        # Access Token 검증
-        payload = verify_access_token(access_token)
-        return payload
-
-    # 예외처리(HTTPException, 그 외 예외)
+        return verify_access_token(access_token)
     except HTTPException as e:
-        # Access Token이 만료되었을 경우 자동 갱신 로직 추가 
-        if e.detail == "토큰이 만료되었습니다.":
-            raise HTTPException(status_code=401, detail="Access Token이 만료되었습니다. Refresh Token을 사용하세요.")  
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"error: {str(e)}")
