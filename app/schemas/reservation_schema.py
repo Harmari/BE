@@ -33,7 +33,6 @@ class ReservationCreateResponse(BaseModel):
     user_id: str
     designer_id: str
     reservation_date_time: str
-    google_meet_link: str
     mode: str
     status: str
 
