@@ -29,14 +29,13 @@ class ReservationCreateRequest(BaseModel):
     mode: str
     status: str
 
+
 class ReservationCreateResponse(BaseModel):
     user_id: str
     designer_id: str
     reservation_date_time: str
-    google_meet_link: str
     mode: str
     status: str
-
 
 
 class ReservationDetail(BaseModel):
