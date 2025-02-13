@@ -83,14 +83,28 @@ async def refresh_access_token(request: Request, response: Response):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"토큰 갱신 실패: {str(e)}")
 
-async def logout_user(response: Response):
-    """로그아웃 - Refresh Token 삭제 및 쿠키 제거"""
+async def logout_user(request: Request, response: Response):
+    """로그아웃 - Refresh Token 확인 후 삭제 및 쿠키 제거"""
     try:
         # 쿠키에서 Refresh Token 가져오기
-        clear_auth_cookies(response) 
+        refresh_token = request.cookies.get("refresh_token")
+        access_token = request.cookies.get("access_token")
+
+        # Refresh Token이 없으면 로그아웃 실패
+        if not refresh_token:
+            raise HTTPException(status_code=400, detail="로그아웃 실패: Refresh Token이 없습니다.")
+
+        # 쿠키 삭제 (로그아웃 처리)
+        response.delete_cookie(key="refresh_token")
+        response.delete_cookie(key="access_token")
+
         return {"message": "로그아웃 완료"}
+
+    except HTTPException as e:
+        raise e  # FastAPI 기본 예외 처리
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"로그아웃 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"로그아웃 중 오류 발생: {str(e)}")
+
 
 async def withdraw_user(email: str, response: Response):
     """회원 탈퇴 - 사용자 정보 삭제 및 쿠키 제거"""

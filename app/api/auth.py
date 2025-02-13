@@ -52,6 +52,9 @@ async def refresh_token(request: Request, response: Response):
     return await refresh_access_token(request, response) 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(request: Request, response: Response):
     """로그아웃 - Refresh Token 삭제"""
-    return await logout_user(response)
+    try:
+        return await logout_user(request, response)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"로그아웃 실패: {str(e)}")
