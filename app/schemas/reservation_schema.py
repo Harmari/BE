@@ -58,3 +58,6 @@ class ReservationSimple(BaseModel):
     consulting_fee: int
     status: str
 
+
+class GoogleMeetLinkResponse(BaseModel):
+    google_meet_link: str

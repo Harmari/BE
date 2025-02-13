@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 from bson import ObjectId
 
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
-    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple
+    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
 from app.db.session import get_database
 
 db = get_database()
@@ -166,10 +166,8 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
 async def get_reservations_list_by_user_id(user_id: str) -> List[ReservationSimple]:
     # 사용자 ID로 예약 리스트 조회
     reservations_cursor = collection.find({"user_id": ObjectId(user_id)}).sort("reservation_date_time", -1)
-    # reservations_cursor = collection.find({"user_id": user_id})
     reservations = await reservations_cursor.to_list(length=None)
 
-    print(reservations)
     return [
         ReservationSimple(
             **{
@@ -205,10 +203,7 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     if not reservation:
         return None
     
-    # 현재 상태에 따라 상태 변경
-    current_status = reservation["status"]
     new_status = "예약취소" 
-
     # 상태 업데이트
     await collection.update_one(
         {"_id": ObjectId(reservation_id)},
@@ -225,3 +220,23 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
             "designer_id": str(updated_reservation["designer_id"]),
         }
     )
+
+
+async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkResponse:
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+    if not reservation:
+        raise ValueError("Reservation not found")
+    
+    if reservation["mode"] != "비대면":
+        raise ValueError("This user is not remote mode - not allowed to get google meet link")
+    
+    # 구글 밋 링크 생성 (목 데이터 사용)
+    google_meet_link = "https://meet.google.com/mockdata"
+    
+    # 데이터베이스에 링크 저장
+    await collection.update_one(
+        {"_id": ObjectId(reservation_id)},
+        {"$set": {"google_meet_link": google_meet_link}}
+    )
+    
+    return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
