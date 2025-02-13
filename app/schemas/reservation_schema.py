@@ -20,12 +20,14 @@ class ReservationListResponse(BaseModel):
 
 
 class ReservationCreateRequest(BaseModel):
+    reservation_id: str
     designer_id: str
     user_id: str
     reservation_date_time: str
     consulting_fee: str
     google_meet_link: str
     mode: str
+    status: str
 
 class ReservationCreateResponse(BaseModel):
     user_id: str
