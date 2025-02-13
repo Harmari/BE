@@ -11,7 +11,6 @@ class UserBase(BaseModel):
     profile_image: Optional[str] = None
     provider: str = "google"
     status: str = "active"
-    refresh_token: Optional[str] = None
     created_at: str = settings.CURRENT_DATETIME
     updated_at: str = settings.CURRENT_DATETIME
 
