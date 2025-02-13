@@ -114,3 +114,22 @@ async def delete_refresh_token(email: str, refresh_token: str):
     # 업데이트 실패시 예외처리
     if update_result.modified_count == 0:
         raise ValueError("삭제 실패")
+
+async def delete_user(email: str):
+    """회원 탈퇴 기능 - 사용자의 데이터를 삭제"""
+    db = get_database()
+    users_collection = db["users"]
+
+    # 사용자 정보 조회
+    user = await users_collection.find_one({"email": email})
+
+    # 사용자가 없을 경우 예외처리
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자가 없습니다.")
+
+    # 사용자 삭제
+    delete_result = await users_collection.delete_one({"email": email})
+
+    # 삭제 실패 시 예외처리
+    if delete_result.deleted_count == 0:
+        raise HTTPException(status_code=500, detail="회원 탈퇴에 실패하였습니다.")

@@ -8,6 +8,7 @@ from app.repository.user_repository import (
     get_user_by_email,
     create_user,
     update_refresh_token,
+    delete_user
 )
 from app.core.security import (
     create_access_token, 
@@ -154,7 +155,7 @@ async def authenticate_user(user_info: dict, response: Response) -> dict:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"사용자 인증 실패: {str(e)}")
-
+    
 async def refresh_access_token(request: Request, response: Response):
     """Refresh Token을 이용해 Access Token 재발급"""
     try:
@@ -201,3 +202,19 @@ async def logout_user(response: Response):
         return {"message": "로그아웃 완료"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"로그아웃 실패: {str(e)}")
+
+async def withdraw_user(email: str, response: Response):
+    """회원 탈퇴 - 사용자 정보 삭제 및 쿠키 제거"""
+    try:
+        # 사용자 삭제
+        await delete_user(email)
+
+        # 인증 쿠키 제거
+        clear_auth_cookies(response)
+
+        return {"message": "회원 탈퇴가 됐습니다."}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"회원 탈퇴 실패: {str(e)}")
