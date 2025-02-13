@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, HTTPException, Response
 
 from app.core.security import verify_access_token
 from app.repository.user_repository import get_user_by_email
-from app.services.auth_service import withdraw_user
+from app.services.user_service import withdraw_user
 
 router = APIRouter()
 
