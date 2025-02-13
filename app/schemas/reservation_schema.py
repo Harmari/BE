@@ -20,6 +20,7 @@ class ReservationListResponse(BaseModel):
 
 
 class ReservationCreateRequest(BaseModel):
+    reservation_id: str
     designer_id: str
     user_id: str
     reservation_date_time: str
