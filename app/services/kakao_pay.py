@@ -11,6 +11,7 @@ class KakaoPayService:
             "Authorization": f"SECRET_KEY {settings.KAKAO_PAY_SECRET_KEY_DEV}",
             "Content-Type": "application/json"
         }
+        self.redirect_host = settings.FRONTEND_URL
         
 
     # 결제 준비 API    
@@ -31,9 +32,10 @@ class KakaoPayService:
             "quantity": str(quantity), # 상품 수량
             "total_amount": str(total_amount), # 총 결제 금액
             "tax_free_amount": str(tax_free_amount), # 비과세 금액
-            "approval_url": "http://localhost:3000/payment/success", # 결제 성공 후 리다이렉션 URL
-            "cancel_url": "http://localhost:3000/payment/cancel", # 결제 취소 후 리다이렉션 URL
-            "fail_url": "http://localhost:3000/payment/fail" # 결제 실패 후 리다이렉션 URL
+            # 리다이렉션 URL 수정
+            "approval_url": f"{self.redirect_host}/payment/success",
+            "cancel_url": f"{self.redirect_host}/payment/cancel",
+            "fail_url": f"{self.redirect_host}/payment/fail"
         }
         
         if vat_amount is not None:
