@@ -5,7 +5,7 @@ from app.schemas.reservation_schema import (
 )
 from app.services.reservation_service import (
     reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id, \
-    update_reservation_status, generate_google_meet_link_service
+    update_reservation_status, generate_google_meet_link_service, reservation_pay_ready_service
 )
 from typing import List
 
@@ -109,3 +109,11 @@ async def generate_google_meet_link(reservation_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"오류 : {str(e)}"
         )
+
+@router.get("/reservation/pay_ready")
+async def reservation_pay_ready_endpoint():
+    try:
+        result = await reservation_pay_ready_service()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
