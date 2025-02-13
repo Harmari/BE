@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Request, HTTPException, Response
-
 from app.core.security import verify_access_token
-from app.repository.user_repository import get_user_by_email
 from app.services.user_service import withdraw_user
+from app.repository.user_repository import get_user_by_email
+from app.schemas.user_schema import UserDetailResponse
 
 router = APIRouter()
 
-@router.get("/me")
+@router.get("/me", response_model=UserDetailResponse)
 async def get_logged_in_user(request: Request):
     """현재 로그인한 사용자 정보 조회 (쿠키 기반)"""
     # 쿠키에서 access_token 가져오기
@@ -28,14 +28,14 @@ async def get_logged_in_user(request: Request):
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없다.")
 
-        return {"user": user}
+        return user
 
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"error : {str(e)}")
 
-@router.get("/{email}")
+@router.get("/{email}", response_model=UserDetailResponse)
 async def get_user_info(email: str):
     """이메일로 특정 사용자 정보 조회"""
     user = await get_user_by_email(email)
