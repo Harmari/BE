@@ -42,6 +42,7 @@ jobs:
           echo "KAKAO_PAY_API_HOST=${{ secrets.KAKAO_PAY_API_HOST }}" >> real.env
           echo "REFRESH_SECRET_KEY=${{ secrets.REFRESH_SECRET_KEY }}" >> real.env
           echo "REFRESH_TOKEN_EXPIRE_DAYS=${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}" >> real.env
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> real.env
 
       - name: Copy project files to remote server
         run: |
