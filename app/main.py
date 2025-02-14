@@ -28,7 +28,7 @@ db = get_database()
 # feat : 자동문
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 허용할 Origin
+    allow_origins=[settings.FRONTEND_URL],  # 허용할 Origin
     allow_methods=["GET", "POST", "OPTIONS"],  # 허용할 HTTP 메서드
     allow_headers=["*"],  # 허용할 HTTP 헤더
     allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부

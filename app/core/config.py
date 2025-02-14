@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     KAKAO_PAY_SECRET_KEY_DEV: str
     KAKAO_PAY_API_HOST: str
 
+    # Frontend
+    FRONTEND_URL: str
+
     class Config:
         env_file = 'real.env'
         env_file_encoding = 'utf-8'

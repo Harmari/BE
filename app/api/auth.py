@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, Response
+import logging
+from fastapi.responses import RedirectResponse
+from app.core.config import settings
 from app.services.auth_service import (
     get_google_auth_url,
     get_google_access_token,
@@ -10,7 +13,10 @@ from app.services.user_service import (
     logout_user
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+FRONTEND_URL = settings.FRONTEND_URL
 
 @router.get("/login")
 async def login():
@@ -21,33 +27,42 @@ async def login():
 async def auth_callback(request: Request, response: Response):
     """Google OAuth 리디렉션 처리 후 로그인"""
     try:
-        # 인증 코드 가져오기
         code = request.query_params.get("code")
         if not code:
-            raise HTTPException(status_code=400, detail={"success": False, "message": "로그인 실패"})
+            logger.error("1. 로그인 실패 - 인증 코드 없음")
+            raise HTTPException(status_code=400, detail="1. 로그인 실패")
 
-        # 토큰 요청
+        # Google에 토큰 요청
         token_data = await get_google_access_token(code)
         access_token = token_data.get("access_token")
         if not access_token:
-            raise HTTPException(status_code=400, detail={"success": False, "message": "로그인 실패"})
+            logger.error("2. 로그인 실패 - 액세스 토큰 없음")
+            raise HTTPException(status_code=400, detail="2. 로그인 실패")
 
         # 사용자 정보 요청
         userinfo = await get_google_user_info(access_token)
         if not userinfo or "email" not in userinfo:
-            raise HTTPException(status_code=400, detail={"success": False, "message": "로그인 실패"})
+            logger.error("3. 로그인 실패 - 사용자 정보 없음")
+            raise HTTPException(status_code=400, detail="3. 로그인 실패")
 
         # 로그인 성공 시 쿠키 설정
         await authenticate_user(userinfo, response)
+        logger.info(f"사용자 로그인 성공: {userinfo['email']}")
 
-        return {"success": True, "message": "로그인 성공"}
+        # 로그인 성공 후 프론트엔드로 리디렉트
+        redirect_url = f"{FRONTEND_URL}/designer-list"
+        logger.info(f"Redirecting to: {redirect_url}")
+
+        return RedirectResponse(url=redirect_url, status_code=302)
 
     except HTTPException as e:
-        raise e
+        logger.error(f"로그인 중 오류 발생: {str(e.detail)}")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error={str(e.detail)}", status_code=302)
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail={"success": False, "message": f"로그인 실패: {str(e)}"})
-
-
+        logger.exception("4. 로그인 실패 - 알 수 없는 오류 발생")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=로그인 실패", status_code=302)
+    
 @router.post("/refresh")
 async def refresh_token(request: Request, response: Response):
     """Refresh Token을 이용한 Access Token 재발급"""
