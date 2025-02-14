@@ -48,12 +48,7 @@ class KakaoPayService:
                     json=payload,
                     headers=self.headers
                 )
-                
-                print(f"Request URL: {response.request.url}") # 요청 URL
-                print(f"Request Headers: {response.request.headers}") # 요청 헤더
-                print(f"Request Body: {response.request.content}") # 요청 바디
-                print(f"Response Status: {response.status_code}") # 응답 상태 코드
-                print(f"Response Body: {response.text}") # 응답 바디
+
                 
                 response.raise_for_status() # 응답 상태 코드 확인
                 return response.json() # 응답 바디 반환
@@ -65,26 +60,26 @@ class KakaoPayService:
     # 결제 승인 API
     async def approve_payment(self, tid: str, pg_token: str, order_id: str, user_id: str) -> dict:
         """결제 승인 API"""
-        payload = {
-            "cid": "TC0ONETIME", # 카카오페이 클라이언트 ID
-            "tid": tid, # 카카오페이 결제 고유 번호
-            "partner_order_id": str(order_id), # 주문 번호
-            "partner_user_id": str(user_id), # 사용자 아이디
-            "pg_token": pg_token # 결제 토큰
-        }
-        
-        async with httpx.AsyncClient() as client:
-            try:
+        try:
+            payload = {
+                "cid": "TC0ONETIME",
+                "tid": tid,
+                "partner_order_id": str(order_id),
+                "partner_user_id": str(user_id),
+                "pg_token": pg_token
+            }
+            
+            async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"{self.api_host}/online/v1/payment/approve", # 결제 승인 API 엔드포인트
+                    f"{self.api_host}/online/v1/payment/approve",
                     json=payload,
                     headers=self.headers
                 )
-                response.raise_for_status() # 응답 상태 코드 확인
+                response.raise_for_status()
                 return response.json()
-            except httpx.HTTPError as e:
-                raise HTTPException(status_code=400, detail=f"카카오페이 결제 승인 실패: {str(e)}") 
-            
+        except Exception as e:
+            raise
+
 
     # 결제 취소 API
     async def cancel_payment(
