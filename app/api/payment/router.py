@@ -52,13 +52,16 @@ async def ready_payment(
             }}
         )
 
-        # 결제 준비 응답 반환
-        return payments_schemas.PaymentReadyResponse(
-            tid=kakao_response["tid"], # 카카오페이 결제 고유 번호
-            next_redirect_pc_url=kakao_response["next_redirect_pc_url"], # 컴퓨터 리다이렉션 URL
-            next_redirect_mobile_url=kakao_response["next_redirect_mobile_url"], # 모바일 리다이렉션 URL
-            created_at=datetime.fromisoformat(kakao_response["created_at"]) # 생성 시간
-        )
+        # 응답 데이터 출력
+        response_data = {
+            "tid": kakao_response["tid"],
+            "next_redirect_pc_url": kakao_response["next_redirect_pc_url"],
+            "next_redirect_mobile_url": kakao_response["next_redirect_mobile_url"],
+            "created_at": datetime.fromisoformat(kakao_response["created_at"]),
+            "payment_id": str(result.inserted_id)  # 명시적으로 문자열로 변환
+        }
+        
+        return response_data  # dict로 직접 반환
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -72,23 +75,38 @@ async def approve_payment(
 ):
     """결제 승인 API"""
     try:
-        # ObjectId로 변환하여 조회
         payment = await db.payments.find_one({"_id": ObjectId(approve_data.order_id)})
-        
-        # 디버깅을 위한 로그 추가
-        print(f"Looking for payment with order_id: {approve_data.order_id}")
-        print(f"Found payment: {payment}")
-        
+
         if not payment:
             raise HTTPException(status_code=404, detail="Payment not found")
 
+        # 이미 완료된 결제인 경우
+        if payment.get("status") == "completed":
+            payment_response = {
+                **payment,
+                "id": str(payment["_id"]),
+            }
+            del payment_response["_id"]
+            return payments_schemas.PaymentResponse(**payment_response)
+
         # 카카오페이 결제 승인 요청
-        kakao_response = await kakao_pay_service.approve_payment(
-            tid=approve_data.tid,
-            pg_token=approve_data.pg_token,
-            order_id=approve_data.order_id,
-            user_id=payment["user_id"]
-        )
+        try:
+            kakao_response = await kakao_pay_service.approve_payment(
+                tid=approve_data.tid,
+                pg_token=approve_data.pg_token,
+                order_id=approve_data.order_id,
+                user_id=payment["user_id"]
+            )
+        except Exception as e:
+            if "payment is already done" in str(e):
+                # 이미 완료된 결제면 성공 응답
+                payment_response = {
+                    **payment,
+                    "id": str(payment["_id"]),
+                }
+                del payment_response["_id"]
+                return payments_schemas.PaymentResponse(**payment_response)
+            raise HTTPException(status_code=400, detail=str(e))
 
         # 결제 정보 업데이트
         now = datetime.utcnow()
