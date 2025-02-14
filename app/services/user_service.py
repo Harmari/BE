@@ -13,7 +13,12 @@ from app.core.config import settings
 async def authenticate_user(user_info: dict, response: Response) -> dict:
     """OAuth 인증 후 기존 회원 여부 확인 및 로그인 처리"""
     email = user_info["email"]
-    existing_user = await get_user_by_email(email)
+    print("사용자 생성 요청: ", user_info)
+
+    try:
+        existing_user = await get_user_by_email(email)
+    except HTTPException as e:
+        existing_user = None
 
     if existing_user:
         if existing_user.status in ["inactive", "banned"]:
@@ -26,6 +31,7 @@ async def authenticate_user(user_info: dict, response: Response) -> dict:
 
         return {"message": "로그인 성공"}
 
+    # 새로운 사용자 등록
     new_user_data = UserCreateRequest(
         email=email,
         google_id=user_info["id"],
