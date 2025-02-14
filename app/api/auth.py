@@ -16,7 +16,7 @@ from app.services.user_service import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-FRONTEND_URL = settings.FRONTEND_URL
+
 
 @router.get("/login")
 async def login():
@@ -25,6 +25,13 @@ async def login():
 
 @router.get("/callback")
 async def auth_callback(request: Request, response: Response):
+
+    # 접근한 URL로 동적 변경
+    FRONTEND_URL = getattr(request.state, "client_origin", None)
+    if not FRONTEND_URL:
+        # client_origin이 없다면
+        raise HTTPException(status_code=400, detail="접근할 수 없는 URL")
+
     """Google OAuth 리디렉션 처리 후 로그인"""
     try:
         code = request.query_params.get("code")
