@@ -30,13 +30,13 @@ async def get_user_by_email(email: str) -> UserDetailResponse:
 
 async def create_user(user_data: UserCreateRequest) -> UserCreateResponse:
     """새로운 사용자 등록"""
-    user_dict = user_data.dict()
-    user_dict["provider"] = "google"
-    user_dict["created_at"] = settings.CURRENT_DATETIME
-    user_dict["updated_at"] = settings.CURRENT_DATETIME
-    user_dict["status"] = "active"
+    user_dict = user_data.model_dump()
+    user_dict["_id"] = ObjectId()
 
     result = await users_collection.insert_one(user_dict)
+
+    if not result.inserted_id:
+        raise HTTPException(status_code=500, detail="사용자 저장 실패")
 
     return UserCreateResponse(
         user_id=str(result.inserted_id),

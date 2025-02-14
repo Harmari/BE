@@ -12,7 +12,8 @@ class UserBase(BaseModel):
 
 class UserCreateRequest(UserBase):
     """새로운 사용자 생성 요청"""
-    pass
+    created_at: str
+    updated_at: str
 
 class UserCreateResponse(UserBase):
     """새로운 사용자 생성 응답"""
