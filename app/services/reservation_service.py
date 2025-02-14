@@ -261,7 +261,7 @@ async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLi
         raise ValueError("Reservation not found")
 
     if reservation["mode"] != "비대면":
-        raise ValueError("This user is not remote mode - not allowed to get google meet link")
+        raise ValueError("비대면 모드가 아닙니다. Google Meet링크를 생성할 수 없습니다.")
 
     # 구글 밋 링크 생성 (목 데이터 사용)
     google_meet_link = "https://meet.google.com/mockdata"

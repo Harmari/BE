@@ -44,7 +44,7 @@ async def reservation_list_endpoint(request: ReservationCreateRequest):
         )
 
 # 예약 리스트
-@router.get("/get_list", response_model=List[ReservationSimple])
+@router.post("/get_list", response_model=List[ReservationSimple])
 async def read_reservations(user_id: str):
     try:
         reservations = await get_reservations_list_by_user_id(user_id)
@@ -62,7 +62,7 @@ async def read_reservations(user_id: str):
             detail=f"오류 : {str(e)}"
         )
 
-@router.get("/get_detail", response_model=ReservationDetail)
+@router.post("/get_detail", response_model=ReservationDetail)
 async def read_reservation(reservation_id: str):
     try:
         reservations = await get_reservation_by_id(reservation_id)
