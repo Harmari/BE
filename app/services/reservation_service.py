@@ -40,7 +40,9 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
 
     reservations_cursor = collection.find({
         "designer_id": designer_obj_id,
-        "reservation_date_time": {"$gte": now_str, "$lte": three_months_ahead_str}
+        "reservation_date_time": {"$gte": now_str, "$lte": three_months_ahead_str},
+        "del_yn": "n",
+        "status": "예약완료"
     })
 
     reservations = await reservations_cursor.to_list(length=None)
@@ -240,7 +242,10 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     # 상태 업데이트
     await collection.update_one(
         {"_id": ObjectId(reservation_id)},
-        {"$set": {"status": new_status}}
+        {"$set": {
+            "status": new_status,
+            "update_at": current_time_str,
+        }},
     )
 
     # 업데이트된 예약 정보 반환
