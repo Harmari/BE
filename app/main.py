@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from app.core.utils import ClientOriginMiddleware
 
 from app.api import test, reservation, auth, user, designer
 from app.core.config import settings
@@ -22,17 +23,21 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="할머리?머리하실?", description="API Documentation", version="1.0.0")
 
+
+
 db = get_database()
 
 # Add CORS middleware to handle OPTIONS requests
 # feat : 자동문
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 허용할 Origin
+    allow_origins=[settings.FRONTEND_URL],  # 허용할 Origin
     allow_methods=["GET", "POST", "OPTIONS"],  # 허용할 HTTP 메서드
     allow_headers=["*"],  # 허용할 HTTP 헤더
     allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부
 )
+
+app.add_middleware(ClientOriginMiddleware)
 
 # 에러 로깅
 @app.exception_handler(Exception)
