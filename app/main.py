@@ -1,6 +1,7 @@
 # app/main.py
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi import Request
@@ -16,19 +17,31 @@ from app.core.config import settings
 from app.db.session import get_database
 # 결제
 from app.api.payment.router import router as payment_router
+from app.scheduler.schedulers import start_scheduler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="할머리?머리하실?", description="API Documentation", version="1.0.0")
+
+# 스케줄러
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 애플리케이션 시작 시 실행
+    start_scheduler()
+    logger.info("Scheduler started on application startup.")
+    yield  # 이 시점 이후에 애플리케이션 실행
+    # 애플리케이션 종료 시 실행
+    logger.info("Application shutdown.")
+
+
+app = FastAPI(title="할머리?머리하실?", description="API Documentation", version="1.0.0", lifespan=lifespan)
 
 
 
 db = get_database()
 
 # Add CORS middleware to handle OPTIONS requests
-# feat : 자동문
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],  # 허용할 Origin
@@ -124,7 +137,6 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.getcwd(), "images")),
 
 
 # endpoint 설정하는 부분 하단에 import 후 추가
-from app.api import test, reservation, auth
 
 app.include_router(test.router, prefix="/test", tags=["test"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
