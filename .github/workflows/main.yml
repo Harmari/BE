@@ -26,11 +26,15 @@ jobs:
           
       - name: Create real.env file
         run: |
-          printf '%s' "${{ secrets.REAL }}" > real.env
+          cat <<EOF > real.env
+          ${{ secrets.REAL }}
+          EOF
 
       - name: Create credentials.json file
         run: |
-          printf '%s' "${{ secrets.credentials }}" > credentials.json
+          cat <<EOF > credentials.json
+          ${{ secrets.credentials }}
+          EOF
 
       - name: Copy project files to remote server
         run: |
