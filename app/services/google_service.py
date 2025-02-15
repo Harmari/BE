@@ -110,5 +110,19 @@ def update_event_with_meet_link(event_id):
     meet_link = updated_event.get('conferenceData', {}).get('entryPoints', [])[0].get('uri', '')
     logger.info('Google Meet Link: %s' % meet_link)
     logger.info('Event updated: %s' % (updated_event.get('htmlLink')))
-    
-    return meet_link
+
+    return meet_link # 구글밋링크 반환
+
+
+def delete_google_calendar_event(event_id):
+    creds = authenticate_google_calendar()
+    service = build('calendar', 'v3', credentials=creds)
+
+    try:
+        # 이벤트가 존재하는지 확인
+        event = service.events().get(calendarId='primary', eventId=event_id).execute()
+        if event:
+            service.events().delete(calendarId='primary', eventId=event_id).execute()
+            logger.info('Google Calendar event deleted: %s' % event_id)
+    except Exception as e:
+        logger.error(f"Error deleting event: {e}")
