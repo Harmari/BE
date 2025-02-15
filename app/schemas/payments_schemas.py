@@ -35,6 +35,7 @@ class PaymentReadyResponse(BaseModel):
     next_redirect_pc_url: str
     next_redirect_mobile_url: str
     created_at: datetime
+    payment_id: str  # MongoDB의 _id를 저장할 필드 추가
 
 # 결제 승인 요청 스키마
 class PaymentApproveRequest(BaseModel):
