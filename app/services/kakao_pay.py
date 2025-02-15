@@ -11,7 +11,7 @@ class KakaoPayService:
             "Authorization": f"SECRET_KEY {settings.KAKAO_PAY_SECRET_KEY_DEV}",
             "Content-Type": "application/json"
         }
-        self.redirect_host = settings.FRONTEND_URL
+        self.redirect_host = settings.KAKAO_PAY_REDIRECT_URL  
         
 
     # 결제 준비 API    
