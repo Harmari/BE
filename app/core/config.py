@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     KAKAO_PAY_CLIENT_SECRET: str
     KAKAO_PAY_SECRET_KEY_DEV: str
     KAKAO_PAY_API_HOST: str
+    KAKAO_PAY_REDIRECT_URL: str
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str
