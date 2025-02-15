@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
     ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
 from app.db.session import get_database
-from app.services.google_service import add_event_to_user_calendar, update_event_with_meet_link
+from app.services.google_service import add_event_to_user_calendar, update_event_with_meet_link, delete_google_calendar_event
 
 db = get_database()
 collection = db["reservations"]
@@ -250,16 +250,26 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     if not reservation:
         return None
 
+    
+
     new_status = "예약취소"
     # 상태 업데이트
     await collection.update_one(
         {"_id": ObjectId(reservation_id)},
-        {"$set": {
-            "status": new_status,
-            "update_at": current_time_str,
-        }},
+        {
+            "$set": {
+                "status": new_status,
+                "update_at": current_time_str,
+            },
+            "$unset": {"google_meet_link": ""}
+        }
     )
 
+    google_event_id = reservation.get("google_event_id")
+    if google_event_id:
+        delete_google_calendar_event(google_event_id)
+        
+        
     # 업데이트된 예약 정보 반환
     updated_reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
     return ReservationDetail(
