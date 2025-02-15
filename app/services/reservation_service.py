@@ -232,6 +232,11 @@ async def get_reservation_by_id(reservation_id: str) -> Optional[ReservationDeta
     # 아이디 기준으로 예약 정보 조회
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
 
+    if not reservation:
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
+    
+
     if reservation:
         return ReservationDetail(
             **{
@@ -248,8 +253,8 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
 
     if not reservation:
-        return None
-
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
     
 
     new_status = "예약취소"
@@ -269,7 +274,7 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     if google_event_id:
         delete_google_calendar_event(google_event_id)
         
-        
+
     # 업데이트된 예약 정보 반환
     updated_reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
     return ReservationDetail(
@@ -285,9 +290,11 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
 async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkResponse:
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
     if not reservation:
-        raise ValueError("Reservation not found")
-
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
+    
     if reservation["mode"] != "비대면":
+        logger.error(f"비대면 모드가 아닙니다. reservation_id: {reservation_id}")
         raise ValueError("비대면 모드가 아닙니다. Google Meet링크를 생성할 수 없습니다.")
 
     # 구글 밋 링크 생성 (목 데이터 사용)

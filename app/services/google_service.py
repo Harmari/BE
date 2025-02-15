@@ -47,71 +47,73 @@ async def add_event_to_user_calendar(user_email, event_date):
         except ValueError:
             raise ValueError("event_date가 올바른 형식이 아닙니다. '%Y%m%d%H%M' 형식이어야 합니다.")
 
-    # Load user's credentials
-    creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-
-    # Build the calendar service
-    service = build('calendar', 'v3', credentials=creds)
-
-    # Create the event
-    event = {
-        'summary': '블리스 헤어 상담소',
-        'description': '블리스 헤어 상담소 예약 이벤트',
-        'start': {
-            'dateTime': event_date.isoformat(),
-            'timeZone': 'Asia/Seoul',
-        },
-        'end': {
-            'dateTime': (event_date + timedelta(hours=1)).isoformat(),
-            'timeZone': 'Asia/Seoul',
-        },
-        'attendees': [
-            {'email': user_email},
-        ],
-        'reminders': {
-            'useDefault': False,
-            'overrides': [
-                {'method': 'email', 'minutes': 24 * 60},
-                {'method': 'popup', 'minutes': 10},
+    try:
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        service = build('calendar', 'v3', credentials=creds)
+        event = {
+            'summary': '블리스 헤어 상담소',
+            'description': '블리스 헤어 상담소 예약 이벤트',
+            'start': {
+                'dateTime': event_date.isoformat(),
+                'timeZone': 'Asia/Seoul',
+            },
+            'end': {
+                'dateTime': (event_date + timedelta(hours=1)).isoformat(),
+                'timeZone': 'Asia/Seoul',
+            },
+            'attendees': [
+                {'email': user_email},
             ],
-        },
-    }
-
-    # Insert the event into the user's calendar
-    event = service.events().insert(calendarId='primary', body=event).execute()
-    logger.info('Event created: %s' % (event.get('htmlLink'))) # 구글 캘린더 링크
-    return event.get('id')  # 이벤트 ID 반환
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'email', 'minutes': 24 * 60},
+                    {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+        event = service.events().insert(calendarId='primary', body=event).execute()
+        logger.info('Event created: %s' % (event.get('htmlLink')))
+    
+        return event.get('id') # 이벤트 아이디 반환
+    
+    except Exception as e:
+        logger.error(f"캘린더에 이벤트 추가 중 오류 발생: {e}")
+        return None
 
 
 
 def update_event_with_meet_link(event_id):
-
-    creds = authenticate_google_calendar()
-    service = build('calendar', 'v3', credentials=creds)
-
-    event = service.events().get(calendarId='primary', eventId=event_id).execute()
-
-    # Google Meet 링크 자동 생성
-    event['conferenceData'] = {
-        'createRequest': {
-            'conferenceSolutionKey': {'type': 'hangoutsMeet'},
-            'requestId': 'some-unique-string'  # 고유한 문자열 사용
+    try:
+        creds = authenticate_google_calendar()
+        service = build('calendar', 'v3', credentials=creds)
+        event = service.events().get(calendarId='primary', eventId=event_id).execute()
+        
+        # Google Meet 링크 자동 생성
+        event['conferenceData'] = {
+            'createRequest': {
+                'conferenceSolutionKey': {'type': 'hangoutsMeet'},
+                'requestId': 'some-unique-string'
+            }
         }
-    }
 
-    updated_event = service.events().update(
-        calendarId='primary',
-        eventId=event_id,
-        body=event,
-        conferenceDataVersion=1
-    ).execute()
+        updated_event = service.events().update(
+            calendarId='primary',
+            eventId=event_id,
+            body=event,
+            conferenceDataVersion=1
+        ).execute()
 
-    # Google Meet 링크 확인
-    meet_link = updated_event.get('conferenceData', {}).get('entryPoints', [])[0].get('uri', '')
-    logger.info('Google Meet Link: %s' % meet_link)
-    logger.info('Event updated: %s' % (updated_event.get('htmlLink')))
+        # Google Meet 링크 확인
+        meet_link = updated_event.get('conferenceData', {}).get('entryPoints', [])[0].get('uri', '')
+        logger.info('--------------------------------Google Meet Link: %s' % meet_link)
+        logger.info('--------------------------------Event updated: %s' % (updated_event.get('htmlLink')))
 
-    return meet_link # 구글밋링크 반환
+        return meet_link
+    
+    except Exception as e:
+        logger.error(f"Google Meet 링크 업데이트 중 오류 발생: {e}")
+        return None
 
 
 def delete_google_calendar_event(event_id):
@@ -123,6 +125,6 @@ def delete_google_calendar_event(event_id):
         event = service.events().get(calendarId='primary', eventId=event_id).execute()
         if event:
             service.events().delete(calendarId='primary', eventId=event_id).execute()
-            logger.info('Google Calendar event deleted: %s' % event_id)
+            logger.info('--------------------------------구글캘린더 이벤트 삭제: %s' % event_id)
     except Exception as e:
-        logger.error(f"Error deleting event: {e}")
+        logger.error(f"이벤트 삭제 중 오류 발생: {e}")
