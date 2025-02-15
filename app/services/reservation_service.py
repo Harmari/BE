@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
     ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
 from app.db.session import get_database
-
+from app.services.google_service import add_event_to_user_calendar, update_event_with_meet_link, delete_google_calendar_event
 
 db = get_database()
 collection = db["reservations"]
@@ -71,6 +71,7 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
     # 날짜 형식 검증
     try:
         dt_obj = datetime.strptime(dt_str, "%Y%m%d%H%M")
+        dt_obj = kst.localize(dt_obj)  # 시간대 정보 추가
     except Exception as e:
         logger.error(f"reservation_date_time 파싱 오류: {dt_str} - {e}")
         raise ValueError("reservation_date_time 형식이 올바르지 않습니다.")
@@ -188,6 +189,17 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
 
     logger.info(f"Reservation created/updated with id: {new_id}")
 
+    # 구글 캘린더에 이벤트 추가
+    user_email = user.get("email")
+    if user_email:
+        event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
+        event_id = await add_event_to_user_calendar(user_email, event_date)
+        # 이벤트 ID를 데이터베이스에 저장
+        await collection.update_one(
+            {"_id": new_id},
+            {"$set": {"google_event_id": event_id}}
+        )
+
     response = ReservationCreateResponse(
         designer_id=request.designer_id,
         user_id=request.user_id,
@@ -220,6 +232,11 @@ async def get_reservation_by_id(reservation_id: str) -> Optional[ReservationDeta
     # 아이디 기준으로 예약 정보 조회
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
 
+    if not reservation:
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
+    
+
     if reservation:
         return ReservationDetail(
             **{
@@ -236,17 +253,27 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
 
     if not reservation:
-        return None
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
+    
 
     new_status = "예약취소"
     # 상태 업데이트
     await collection.update_one(
         {"_id": ObjectId(reservation_id)},
-        {"$set": {
-            "status": new_status,
-            "update_at": current_time_str,
-        }},
+        {
+            "$set": {
+                "status": new_status,
+                "update_at": current_time_str,
+            },
+            "$unset": {"google_meet_link": ""}
+        }
     )
+
+    google_event_id = reservation.get("google_event_id")
+    if google_event_id:
+        delete_google_calendar_event(google_event_id)
+        
 
     # 업데이트된 예약 정보 반환
     updated_reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
@@ -263,19 +290,24 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
 async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLinkResponse:
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
     if not reservation:
-        raise ValueError("Reservation not found")
-
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
+    
     if reservation["mode"] != "비대면":
+        logger.error(f"비대면 모드가 아닙니다. reservation_id: {reservation_id}")
         raise ValueError("비대면 모드가 아닙니다. Google Meet링크를 생성할 수 없습니다.")
 
     # 구글 밋 링크 생성 (목 데이터 사용)
-    google_meet_link = "https://meet.google.com/mockdata"
 
-    # 데이터베이스에 링크 저장
-    await collection.update_one(
-        {"_id": ObjectId(reservation_id)},
-        {"$set": {"google_meet_link": google_meet_link}}
-    )
+    event_id = reservation.get("google_event_id")
+    logger.info(f"--------------------event_id: {event_id}")
+    if event_id:
+        google_meet_link = update_event_with_meet_link(event_id)
+        # 데이터베이스에 링크 저장
+        await collection.update_one(
+            {"_id": ObjectId(reservation_id)},
+            {"$set": {"google_meet_link": google_meet_link}}
+        )
 
     return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
 

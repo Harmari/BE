@@ -45,7 +45,7 @@ class ReservationDetail(BaseModel):
     mode: str
     reservation_date_time: str
     consulting_fee: int
-    google_meet_link: Optional[str]
+    google_meet_link: Optional[str] = None
     status: str
     create_at: str
     update_at: str
