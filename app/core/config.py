@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str
+    GOOGLE_SCOPES: list[str]
+    GOOGLE_CREDENTIALS_PATH: str
 
     # JWT
     SECRET_KEY: str
