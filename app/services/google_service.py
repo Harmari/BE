@@ -79,17 +79,36 @@ async def add_event_to_user_calendar(user_email, event_date):
 
     # Insert the event into the user's calendar
     event = service.events().insert(calendarId='primary', body=event).execute()
-    print('Event created: %s' % (event.get('htmlLink')))
+    logger.info('Event created: %s' % (event.get('htmlLink'))) # 구글 캘린더 링크
     return event.get('id')  # 이벤트 ID 반환
 
 
 
-def update_event_with_meet_link(event_id, google_meet_link):
+def update_event_with_meet_link(event_id):
+
     creds = authenticate_google_calendar()
     service = build('calendar', 'v3', credentials=creds)
 
     event = service.events().get(calendarId='primary', eventId=event_id).execute()
-    event['location'] = google_meet_link
 
-    updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
-    print('Event updated: %s' % (updated_event.get('htmlLink')))
+    # Google Meet 링크 자동 생성
+    event['conferenceData'] = {
+        'createRequest': {
+            'conferenceSolutionKey': {'type': 'hangoutsMeet'},
+            'requestId': 'some-unique-string'  # 고유한 문자열 사용
+        }
+    }
+
+    updated_event = service.events().update(
+        calendarId='primary',
+        eventId=event_id,
+        body=event,
+        conferenceDataVersion=1
+    ).execute()
+
+    # Google Meet 링크 확인
+    meet_link = updated_event.get('conferenceData', {}).get('entryPoints', [])[0].get('uri', '')
+    logger.info('Google Meet Link: %s' % meet_link)
+    logger.info('Event updated: %s' % (updated_event.get('htmlLink')))
+    
+    return meet_link
