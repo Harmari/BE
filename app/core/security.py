@@ -118,6 +118,8 @@ async def get_auth_user(request: Request):
     frontend_url = getattr(request.state, "client_origin", None)
     logging.info("접근한 URL ::::: %s", frontend_url)
 
+    allowed_frontend_urls = settings.FRONTEND_URL.split(",")
+
     async def validate_token() -> dict | None:
         access_token = request.cookies.get("access_token")
         if not access_token:
@@ -129,7 +131,7 @@ async def get_auth_user(request: Request):
         return await validate_token()
 
     # 개발 단계: 로컬 프론트엔드 URL이 아닌 경우 토큰 검증 후 반환 (인증 정보 없으면 None)
-    if frontend_url not in ['http://localhost:5173']:
+    if frontend_url not in allowed_frontend_urls:
         return await validate_token()
 
     # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
