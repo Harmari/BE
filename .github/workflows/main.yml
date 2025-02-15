@@ -26,23 +26,11 @@ jobs:
           
       - name: Create real.env file
         run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> real.env
-          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> real.env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> real.env
-          echo "DB_PW=${{ secrets.DB_PW }}" >> real.env
-          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> real.env
-          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> real.env
-          echo "GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}" >> real.env
-          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> real.env
-          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> real.env
-          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> real.env
-          echo "KAKAO_PAY_CLIENT_ID=${{ secrets.KAKAO_PAY_CLIENT_ID }}" >> real.env
-          echo "KAKAO_PAY_CLIENT_SECRET=${{ secrets.KAKAO_PAY_CLIENT_SECRET }}" >> real.env
-          echo "KAKAO_PAY_SECRET_KEY_DEV=${{ secrets.KAKAO_PAY_SECRET_KEY_DEV }}" >> real.env
-          echo "KAKAO_PAY_API_HOST=${{ secrets.KAKAO_PAY_API_HOST }}" >> real.env
-          echo "REFRESH_SECRET_KEY=${{ secrets.REFRESH_SECRET_KEY }}" >> real.env
-          echo "REFRESH_TOKEN_EXPIRE_DAYS=${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}" >> real.env
-          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> real.env
+          echo "${{ secrets.REAL }}" > real.env
+
+      - name: Create credentials.json file
+        run: |
+          echo "${{ secrets.credentials }}" > credentials.json
 
       - name: Copy project files to remote server
         run: |
@@ -50,6 +38,14 @@ jobs:
               -i ~/.ssh/id_rsa \
               -o StrictHostKeyChecking=no \
               -r ./* \
+              ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+
+      - name: Copy credentials.json to remote server
+        run: |
+          scp -P ${{ secrets.REMOTE_PORT }} \
+              -i ~/.ssh/id_rsa \
+              -o StrictHostKeyChecking=no \
+              credentials.json \
               ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
 
       - name: Copy env file to remote server
