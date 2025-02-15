@@ -8,7 +8,7 @@ class KakaoPayService:
     def __init__(self):
         self.api_host = "https://open-api.kakaopay.com" # 카카오페이 API 호스트
         self.headers = {
-            "Authorization": f"SECRET_KEY {settings.KAKAO_PAY_SECRET_KEY_DEV}",
+            "Authorization": f"KakaoAK {settings.KAKAO_PAY_SECRET_KEY_DEV}",
             "Content-Type": "application/json"
         }
         self.redirect_host = settings.FRONTEND_URL
@@ -37,19 +37,18 @@ class KakaoPayService:
             "fail_url": f"{self.redirect_host}/payment/fail"
         }
         
-        print("\n=== Kakao Pay Debug ===")
-        print("1. Secret Key:", settings.KAKAO_PAY_SECRET_KEY_DEV[:10] + "...")  # 앞부분만 출력
+        print("\n=== Request Debug Info ===")
+        print("1. API URL:", f"{self.api_host}/online/v1/payment/ready")
         print("2. Headers:", {
             k: (v[:10] + "..." if k == "Authorization" else v) 
             for k, v in self.headers.items()
         })
         print("3. Payload:", payload)
-        print("4. Redirect URLs:", {
-            "approval": f"{self.redirect_host}/payment/success",
-            "cancel": f"{self.redirect_host}/payment/cancel",
-            "fail": f"{self.redirect_host}/payment/fail"
+        print("4. Environment:", {
+            "FRONTEND_URL": settings.FRONTEND_URL,
+            "API_HOST": self.api_host,
+            "SECRET_KEY": settings.KAKAO_PAY_SECRET_KEY_DEV[:10] + "..."
         })
-        print("=====================\n")
         
         async with httpx.AsyncClient() as client:
             try:
@@ -60,8 +59,11 @@ class KakaoPayService:
                 )
                 
                 if not response.is_success:
-                    print("Error Response:", response.text)
+                    print("\n=== Error Debug Info ===")
+                    print("Status Code:", response.status_code)
                     print("Response Headers:", dict(response.headers))
+                    print("Response Body:", response.text)
+                    print("=====================\n")
                 
                 response.raise_for_status()
                 return response.json()
