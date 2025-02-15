@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from jose import JWTError, jwt, ExpiredSignatureError
 from fastapi import HTTPException, Request, Response
@@ -111,3 +112,33 @@ def clear_auth_cookies(response: Response):
     """JWT 쿠키 삭제 (로그아웃 시 사용)"""
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
+
+
+async def get_auth_user(request: Request):
+    frontend_url = getattr(request.state, "client_origin", None)
+    logging.info("접근한 URL ::::: %s", frontend_url)
+
+    async def validate_token() -> dict | None:
+        access_token = request.cookies.get("access_token")
+        if not access_token:
+            return None
+        return await verify_access_token(access_token)
+
+    # Swagger UI 및 OpenAPI 스키마 요청이면 인증 정보가 없을 경우 None 반환
+    if request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
+        return await validate_token()
+
+    # 개발 단계: 로컬 프론트엔드 URL이 아닌 경우 토큰 검증 후 반환 (인증 정보 없으면 None)
+    if frontend_url not in ['http://localhost:5173']:
+        return await validate_token()
+
+    # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        logging.info("인증 정보 없음")
+        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+    user = await verify_access_token(access_token)
+    if not user:
+        logging.info("잘못되거나 만료된 토큰")
+        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+    return user
