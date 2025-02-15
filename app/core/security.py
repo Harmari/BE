@@ -114,15 +114,22 @@ def clear_auth_cookies(response: Response):
     response.delete_cookie("refresh_token")
 
 async def get_current_user(request: Request):
-    """로그인한 사용자만 접근 가능하도록 인증"""
-    access_token = request.cookies.get("access_token")
 
-    if not access_token:
-        logging.info("인증 정보 없음")
-        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
-    user = await verify_access_token(access_token)
-    if not user:
-        logging.info("잘못되거나 만료된 토큰")
-        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+    # 접근한 URL로 동적 변경
+    frontend_url = getattr(request.state, "client_origin", None)
+
+    # 개발단계에서는 패스
+    if frontend_url != 'http://localhost:5173':
+
+        """로그인한 사용자만 접근 가능하도록 인증 검사"""
+        access_token = request.cookies.get("access_token")
+
+        if not access_token:
+            logging.info("인증 정보 없음")
+            raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+        user = await verify_access_token(access_token)
+        if not user:
+            logging.info("잘못되거나 만료된 토큰")
+            raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
 
     return user
