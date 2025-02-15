@@ -19,14 +19,17 @@ GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 
 def authenticate_google_calendar():
     creds = None
-    # token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists(TOKEN_PATH):
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    try:
+        if os.path.exists(TOKEN_PATH):
+            logger.info(f"자격 증명 파일을 찾았습니다: {TOKEN_PATH}")
+            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    except Exception as e:
+        logger.error(f"자격 증명 파일을 로드하는 중 오류 발생: {e}")
+
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            logger.info("자격 증명이 만료되어 새로 고침 중입니다.")
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
