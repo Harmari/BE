@@ -1,6 +1,6 @@
 import logging
-from typing import List, Optional
-from datetime import datetime
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
 import pytz
 from dateutil.relativedelta import relativedelta
 from pymongo.errors import DuplicateKeyError
@@ -64,7 +64,7 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
     return response
 
 
-async def reservation_create_service(request: ReservationCreateRequest) -> ReservationCreateResponse:
+async def reservation_create_service(request: ReservationCreateRequest, user: Dict[str, Any]) -> ReservationCreateResponse:
     dt_str = request.reservation_date_time.strip()
     now_kst = datetime.now(kst)
 
@@ -76,10 +76,10 @@ async def reservation_create_service(request: ReservationCreateRequest) -> Reser
         logger.error(f"reservation_date_time 파싱 오류: {dt_str} - {e}")
         raise ValueError("reservation_date_time 형식이 올바르지 않습니다.")
 
-    # 예약 시간이 현재 이후여야 함
-    if dt_obj <= now_kst:
+    # 예약 시간이 현재시간+30분 이후여야 함
+    if dt_obj <= now_kst + timedelta(minutes=30):
         logger.error(f"예약 시간이 현재보다 이전 : {dt_str}")
-        raise ValueError("예약 시간은 현재 시간 이후여야 합니다.")
+        raise ValueError("예약 시간은 현재 시간에서 최소 30분 이후여야 합니다.")
 
     # 예약은 최대 3개월 이내로 제한
     if dt_obj > now_kst + relativedelta(months=3):
