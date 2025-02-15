@@ -4,6 +4,7 @@ from datetime import datetime
 import pytz
 from urllib.parse import quote_plus
 import logging
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str
-    GOOGLE_SCOPES: list[str]
+    GOOGLE_SCOPES: List[str]
     GOOGLE_CREDENTIALS_PATH: str
 
     # JWT
