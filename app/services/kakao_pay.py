@@ -25,35 +25,49 @@ class KakaoPayService:
                           tax_free_amount: int = 0) -> dict:
         """결제 준비 API"""
         payload = {
-            "cid": "TC0ONETIME", # 카카오페이 클라이언트 ID
-            "partner_order_id": str(order_id), # 주문 번호
-            "partner_user_id": str(user_id), # 사용자 아이디
-            "item_name": str(item_name), # 상품 이름
-            "quantity": str(quantity), # 상품 수량
-            "total_amount": str(total_amount), # 총 결제 금액
-            "tax_free_amount": str(tax_free_amount), # 비과세 금액
-            # 리다이렉션 URL 수정
+            "cid": "TC0ONETIME",
+            "partner_order_id": str(order_id),
+            "partner_user_id": str(user_id),
+            "item_name": str(item_name),
+            "quantity": str(quantity),
+            "total_amount": str(total_amount),
+            "tax_free_amount": str(tax_free_amount),
             "approval_url": f"{self.redirect_host}/payment/success",
             "cancel_url": f"{self.redirect_host}/payment/cancel",
             "fail_url": f"{self.redirect_host}/payment/fail"
         }
         
-        if vat_amount is not None:
-            payload["vat_amount"] = str(vat_amount) # 부가세 금액
-            
+        print("\n=== Kakao Pay Debug ===")
+        print("1. Secret Key:", settings.KAKAO_PAY_SECRET_KEY_DEV[:10] + "...")  # 앞부분만 출력
+        print("2. Headers:", {
+            k: (v[:10] + "..." if k == "Authorization" else v) 
+            for k, v in self.headers.items()
+        })
+        print("3. Payload:", payload)
+        print("4. Redirect URLs:", {
+            "approval": f"{self.redirect_host}/payment/success",
+            "cancel": f"{self.redirect_host}/payment/cancel",
+            "fail": f"{self.redirect_host}/payment/fail"
+        })
+        print("=====================\n")
+        
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    f"{self.api_host}/online/v1/payment/ready", # 결제 준비 API 엔드포인트
+                    f"{self.api_host}/online/v1/payment/ready",
                     json=payload,
                     headers=self.headers
                 )
-
                 
-                response.raise_for_status() # 응답 상태 코드 확인
-                return response.json() # 응답 바디 반환
+                if not response.is_success:
+                    print("Error Response:", response.text)
+                    print("Response Headers:", dict(response.headers))
+                
+                response.raise_for_status()
+                return response.json()
             except httpx.HTTPError as e:
-                raise HTTPException(status_code=400, detail=f"카카오페이 API 호출 실패: {str(e)}") # 예외 처리
+                print("Error Details:", str(e))
+                raise HTTPException(status_code=400, detail=f"카카오페이 API 호출 실패: {str(e)}")
 
 
 
