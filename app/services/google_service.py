@@ -7,26 +7,29 @@ from datetime import datetime, timedelta
 import os.path
 from app.core.config import settings
 import logging
+from google.oauth2 import service_account
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # TOKEN_PATH = settings.TOKEN_PATH
 TOKEN_PATH = os.path.join(os.getcwd(), "token.json")
-
+SERVICE_ACCOUNT_PATH = os.path.join(os.getcwd(), "service_account.json")
+GOOGLE_CREDENTIALS_PATH = os.path.join(os.getcwd(), "credentials.json")
 SCOPES = settings.GOOGLE_SCOPES
-GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 
 
 def authenticate_google_calendar():
-    creds = None
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_PATH, scopes=SCOPES
+    )
     try:
         if os.path.exists(TOKEN_PATH):
-            logger.info(f"자격 증명 파일을 찾았습니다: {TOKEN_PATH}")
             creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+            logger.info(f"--------------------------------자격 증명 파일 로드 완료")
     except Exception as e:
         logger.error(f"--------------------------------자격 증명 파일을 로드하는 중 오류 발생: {e}")
-
+        return Exception(f"자격 증명 파일을 로드하는 중 오류 발생: {e}")
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -40,6 +43,7 @@ def authenticate_google_calendar():
         with open(TOKEN_PATH, 'w') as token:
             logger.info(f"--------------------------------자격 증명을 파일에 저장합니다: {TOKEN_PATH}")
             token.write(creds.to_json())
+            
     return creds
 
 
