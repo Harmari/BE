@@ -33,7 +33,13 @@ jobs:
       - name: Create credentials.json file
         run: |
           cat <<EOF > credentials.json
-          ${{ secrets.credentials }}
+          ${{ secrets.CREDENTIALS }}
+          EOF
+
+      - name: Create service_account.json file
+        run: |
+          cat <<EOF > service_account.json
+          ${{ secrets.SERVICE_ACCOUNT }}
           EOF
 
       - name: Copy project files to remote server
@@ -50,6 +56,14 @@ jobs:
               -i ~/.ssh/id_rsa \
               -o StrictHostKeyChecking=no \
               credentials.json \
+              ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
+
+      - name: Copy service_account.json to remote server
+        run: |
+          scp -P ${{ secrets.REMOTE_PORT }} \
+              -i ~/.ssh/id_rsa \
+              -o StrictHostKeyChecking=no \
+              service_account.json \
               ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:${{ secrets.REMOTE_TARGET }}
 
       - name: Copy env file to remote server
