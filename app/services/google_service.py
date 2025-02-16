@@ -92,9 +92,10 @@ async def add_event_to_user_calendar(user_email, event_date):
                 'dateTime': (event_date + timedelta(hours=1)).isoformat(),
                 'timeZone': 'Asia/Seoul',
             },
-            'attendees': [
-                {'email': user_email},
-            ],
+            # 이 부분은 사용자를 구글캘린더에 자동 초대하는 기능으로 google works 의 기업용 유료 도메인이 필요한 부분임 해당 부분은 추후 추가
+            # 'attendees': [
+            #     {'email': user_email},
+            # ],
             'reminders': {
                 'useDefault': False,
                 'overrides': [
