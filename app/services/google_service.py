@@ -23,12 +23,12 @@ def authenticate_google_calendar():
             logger.info(f"자격 증명 파일을 찾았습니다: {TOKEN_PATH}")
             creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
     except Exception as e:
-        logger.error(f"자격 증명 파일을 로드하는 중 오류 발생: {e}")
+        logger.error(f"--------------------------------자격 증명 파일을 로드하는 중 오류 발생: {e}")
 
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            logger.info("자격 증명이 만료되어 새로 고침 중입니다.")
+            logger.info("--------------------------------자격 증명이 만료되어 새로 고침 중입니다.")
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
@@ -36,6 +36,7 @@ def authenticate_google_calendar():
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open(TOKEN_PATH, 'w') as token:
+            logger.info(f"--------------------------------자격 증명을 파일에 저장합니다: {TOKEN_PATH}")
             token.write(creds.to_json())
     return creds
 
@@ -50,7 +51,7 @@ async def add_event_to_user_calendar(user_email, event_date):
             raise ValueError("event_date가 올바른 형식이 아닙니다. '%Y%m%d%H%M' 형식이어야 합니다.")
 
     try:
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        creds = authenticate_google_calendar()
         service = build('calendar', 'v3', credentials=creds)
         event = {
             'summary': '블리스 헤어 상담소',
