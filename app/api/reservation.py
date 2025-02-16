@@ -7,7 +7,7 @@ from app.schemas.reservation_schema import (
 )
 from app.services.reservation_service import (
     reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id, \
-    update_reservation_status, generate_google_meet_link_service, reservation_pay_ready_service
+    update_reservation_status, generate_google_meet_link_service, reservation_pay_ready_service, update_just_status
 )
 from typing import List
 
@@ -121,3 +121,22 @@ async def reservation_pay_ready_endpoint():
         # 에러 로깅 추가
         print("Pay Ready Error:", str(e))  # 디버깅용
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/update_reservation_status", response_model=ReservationDetail)
+async def update_reservation_status_endpoint(reservation_id: str, reservation_status: str, user : dict = Depends(get_auth_user)):
+    try:
+        updated_reservation = await update_just_status(reservation_id, reservation_status)
+        if not updated_reservation:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
+        return updated_reservation
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"오류 : {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"오류 : {str(e)}"
+        )

@@ -334,3 +334,40 @@ async def reservation_pay_ready_service() -> dict:
 
     logger.info(f"Reservation pay_ready created with id: {new_id}")
     return {"_id": str(new_id)}
+
+
+async def update_just_status(reservation_id: str, reservation_status: str) -> Optional[ReservationDetail]:
+    reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+
+    if not reservation:
+        logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
+        raise ValueError("예약을 찾을 수 없습니다.")
+
+    # 예약 상태 검증 (유효한 상태 목록)
+    valid_statuses = ["예약완료", "결제대기", "예약취소", "이용완료"]
+    if reservation_status not in valid_statuses:
+        logger.error(f"올바르지 않은 예약 상태: {reservation_status}")
+        raise ValueError(f"status는 {valid_statuses} 중 하나여야 합니다.")
+
+    # 상태 업데이트
+    await collection.update_one(
+        {"_id": ObjectId(reservation_id)},
+        {
+            "$set": {
+                "status": reservation_status,
+                "update_at": current_time_str,
+            },
+            "$unset": {"google_meet_link": ""}
+        }
+    )
+
+    # 업데이트된 예약 정보 반환
+    updated_reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
+    return ReservationDetail(
+        **{
+            **updated_reservation,
+            "id": str(updated_reservation["_id"]),
+            "user_id": str(updated_reservation["user_id"]),
+            "designer_id": str(updated_reservation["designer_id"]),
+        }
+    )
