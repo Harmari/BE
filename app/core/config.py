@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str
     GOOGLE_SCOPES: List[str]
     GOOGLE_CREDENTIALS_PATH: str
+    TOKEN_PATH: str
 
     # JWT
     SECRET_KEY: str
@@ -35,7 +36,7 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
-
+    
     # kakopay
     KAKAO_PAY_CLIENT_ID: str
     KAKAO_PAY_CLIENT_SECRET: str

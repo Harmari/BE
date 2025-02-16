@@ -11,8 +11,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# If modifying these SCOPES, delete the file token.json.
-TOKEN_PATH = '../token.json'
+TOKEN_PATH = settings.TOKEN_PATH
 SCOPES = settings.GOOGLE_SCOPES
 GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 
