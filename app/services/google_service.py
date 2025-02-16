@@ -11,7 +11,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN_PATH = settings.TOKEN_PATH
+# TOKEN_PATH = settings.TOKEN_PATH
+TOKEN_PATH = os.path.join(os.getcwd(), "token.json")
+
 SCOPES = settings.GOOGLE_SCOPES
 GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 
