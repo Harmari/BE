@@ -19,7 +19,7 @@ GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 SCOPES = settings.GOOGLE_SCOPES
 
 SERVICE_ACCOUNT_FILE = os.path.join(os.getcwd(), "service_account.json")
-
+ADMIN_CALENDAR_ID = settings.ADMIN_CALENDAR_ID
 
 # def authenticate_google_calendar():
 #     creds = service_account.Credentials.from_service_account_file(
@@ -104,7 +104,7 @@ async def add_event_to_user_calendar(user_email, event_date):
                 ],
             },
         }
-        event = service.events().insert(calendarId='primary', body=event).execute()
+        event = service.events().insert(calendarId=ADMIN_CALENDAR_ID, body=event).execute()
         logger.info('Event created: %s' % (event.get('htmlLink')))
 
         return event.get('id')  # 이벤트 아이디 반환
@@ -118,7 +118,7 @@ def update_event_with_meet_link(event_id):
     try:
         creds = get_service_account_credentials()
         service = build('calendar', 'v3', credentials=creds)
-        event = service.events().get(calendarId='primary', eventId=event_id).execute()
+        event = service.events().get(calendarId=ADMIN_CALENDAR_ID, eventId=event_id).execute()
 
         # Google Meet 링크 자동 생성
         event['conferenceData'] = {
@@ -129,7 +129,7 @@ def update_event_with_meet_link(event_id):
         }
 
         updated_event = service.events().update(
-            calendarId='primary',
+            calendarId=ADMIN_CALENDAR_ID,
             eventId=event_id,
             body=event,
             conferenceDataVersion=1
@@ -153,9 +153,9 @@ def delete_google_calendar_event(event_id):
 
     try:
         # 이벤트가 존재하는지 확인
-        event = service.events().get(calendarId='primary', eventId=event_id).execute()
+        event = service.events().get(calendarId=ADMIN_CALENDAR_ID, eventId=event_id).execute()
         if event:
-            service.events().delete(calendarId='primary', eventId=event_id).execute()
+            service.events().delete(calendarId=ADMIN_CALENDAR_ID, eventId=event_id).execute()
             logger.info('--------------------------------구글캘린더 이벤트 삭제: %s' % event_id)
     except Exception as e:
         logger.error(f"이벤트 삭제 중 오류 발생: {e}")
