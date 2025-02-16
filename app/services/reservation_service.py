@@ -107,6 +107,12 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
         logger.error(f"예약 시간 오류 (20시까지만 허용): {dt_str}")
         raise ValueError("예약 시간은 20시까지만 가능합니다.")
 
+    # 예약 상태 검증
+    valid_statuses = ["예약완료", "결제대기", "예약취소"]
+    if request.status not in valid_statuses:
+        logger.error(f"올바르지 않은 예약 상태: {request.status}")
+        raise ValueError(f"status는 {valid_statuses} 중 하나여야 합니다.")
+
     # consulting_fee 정수형 변환
     try:
         fee = int(request.consulting_fee)
@@ -145,7 +151,7 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
         "consulting_fee": fee,
         "google_meet_link": request.google_meet_link.strip() if request.google_meet_link.strip() else None,
         "mode": request.mode,
-        "status": "예약완료",  # 최종 상태
+        "status": request.status,
         "update_at": current_time_str,
         "del_yn": "N"
     }
