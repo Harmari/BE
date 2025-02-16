@@ -126,12 +126,8 @@ async def get_auth_user(request: Request):
             return None
         return await verify_access_token(access_token)
 
-    # Swagger UI 및 OpenAPI 스키마 요청이면 인증 정보가 없을 경우 None 반환
-    if request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
-        return await validate_token()
-
     # 개발 단계: 로컬 프론트엔드 URL이 아닌 경우 토큰 검증 후 반환 (인증 정보 없으면 None)
-    if frontend_url not in allowed_frontend_urls:
+    if frontend_url in allowed_frontend_urls:
         return await validate_token()
 
     # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
