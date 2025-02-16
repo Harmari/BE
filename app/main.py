@@ -44,7 +44,7 @@ db = get_database()
 # Add CORS middleware to handle OPTIONS requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],  # 허용할 Origin
+    allow_origins=[origin.strip() for origin in settings.FRONTEND_URL.split(",")],  # 허용할 오리진
     allow_methods=["GET", "POST", "OPTIONS"],  # 허용할 HTTP 메서드
     allow_headers=["*"],  # 허용할 HTTP 헤더
     allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부
