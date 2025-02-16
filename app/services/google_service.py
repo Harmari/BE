@@ -19,95 +19,79 @@ GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 SCOPES = settings.GOOGLE_SCOPES
 
 SERVICE_ACCOUNT_FILE = os.path.join(os.getcwd(), "service_account.json")
-ADMIN_CALENDAR_ID = settings.ADMIN_CALENDAR_ID
-
-# def authenticate_google_calendar():
-#     creds = service_account.Credentials.from_service_account_file(
-#         SERVICE_ACCOUNT_PATH, scopes=SCOPES
-#     )
-#     try:
-#         if os.path.exists(TOKEN_PATH):
-#             creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-#             logger.info(f"--------------------------------자격 증명 파일 로드 완료")
-#     except Exception as e:
-#         logger.error(f"--------------------------------자격 증명 파일을 로드하는 중 오류 발생: {e}")
-#         return Exception(f"자격 증명 파일을 로드하는 중 오류 발생: {e}")
-#     # If there are no (valid) credentials available, let the user log in.
-#     if not creds or not creds.valid:
-#         if creds and creds.expired and creds.refresh_token:
-#             logger.info("--------------------------------자격 증명이 만료되어 새로 고침 중입니다.")
-#             creds.refresh(Request())
-#         else:
-#             flow = InstalledAppFlow.from_client_secrets_file(
-#                 GOOGLE_CREDENTIALS_PATH, SCOPES)
-#             creds = flow.run_local_server(port=0)
-#         # Save the credentials for the next run
-#         with open(TOKEN_PATH, 'w') as token:
-#             logger.info(f"--------------------------------자격 증명을 파일에 저장합니다: {TOKEN_PATH}")
-#             token.write(creds.to_json())
-#
-#     return creds
+DESIGNER_EMAIL = "hsc890125@gmail.com"
 
 
-def get_service_account_credentials():
+def get_service_account_credentials(access_token: str):
     try:
-        creds = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE,
-            scopes=SCOPES
-        )
-        return creds
+        creds = Credentials(token=access_token, scopes=SCOPES)
+        service = build("calendar", "v3", credentials=creds)
+        return service
     except Exception as e:
         logger.error(f"서비스 계쩡 자격 증명 로드 실패: {e}")
         return None
 
 
-async def add_event_to_user_calendar(user_email, event_date):
+async def add_event_to_user_calendar(user_email: str, access_token: str, event_date: datetime):
     # event_date가 문자열이라면 datetime 객체로 변환
     if isinstance(event_date, str):
         logger.info(f"Received event_date: {event_date}")
         try:
-            event_date = datetime.strptime(event_date, "%Y%m%d%H%M")
+            event_date_obj = datetime.strptime(event_date, "%Y%m%d%H%M")
         except ValueError:
             raise ValueError("event_date가 올바른 형식이 아닙니다. '%Y%m%d%H%M' 형식이어야 합니다.")
+    else:
+        event_date_obj = event_date
 
     try:
+        service = get_service_account_credentials(access_token)
 
-        # creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-
-        creds = get_service_account_credentials()
-        if not creds:
-            logger.error("서비스 계정 인증에 실패했습니다.")
-            return None
-
-        service = build('calendar', 'v3', credentials=creds)
-
-        event = {
-            'summary': '블리스 헤어 상담소',
-            'description': '블리스 헤어 상담소 예약 이벤트',
-            'start': {
-                'dateTime': event_date.isoformat(),
-                'timeZone': 'Asia/Seoul',
+        event_body = {
+            "summary": "블리스 헤어 상담소",
+            "description": "블리스 헤어 상담소 예약 이벤트",
+            "start": {
+                "dateTime": event_date.isoformat(),
+                "timeZone": "Asia/Seoul",
             },
-            'end': {
-                'dateTime': (event_date + timedelta(hours=1)).isoformat(),
-                'timeZone': 'Asia/Seoul',
+            "end": {
+                "dateTime": (event_date + timedelta(hours=1)).isoformat(),
+                "timeZone": "Asia/Seoul",
             },
-            # 이 부분은 사용자를 구글캘린더에 자동 초대하는 기능으로 google works 의 기업용 유료 도메인이 필요한 부분임 해당 부분은 추후 추가
-            # 'attendees': [
-            #     {'email': user_email},
-            # ],
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'email', 'minutes': 24 * 60},
-                    {'method': 'popup', 'minutes': 10},
+            "attendees": [
+                {"email": user_email},  # 예약한 유저
+                {"email": DESIGNER_EMAIL},  # 디자이너
+            ],
+            "conferenceData": {
+                "createRequest": {
+                    "conferenceSolutionKey": {"type": "hangoutsMeet"},
+                    "requestId": "unique-request-id"
+                }
+            },
+            "reminders": {
+                "useDefault": False,
+                "overrides": [
+                    {"method": "email", "minutes": 24 * 60},
+                    {"method": "popup", "minutes": 10},
                 ],
             },
         }
-        event = service.events().insert(calendarId=ADMIN_CALENDAR_ID, body=event).execute()
-        logger.info('Event created: %s' % (event.get('htmlLink')))
 
-        return event.get('id')  # 이벤트 아이디 반환
+        created_event = service.events().insert(
+            calendarId="primary",
+            body=event_body,
+            conferenceDataVersion=1
+        ).execute()
+
+        event_id = created_event.get("id")
+        event_html_link = created_event.get("htmlLink")
+        conference_data = created_event.get("conferenceData", {})
+        entry_points = conference_data.get("entryPoints", [])
+        meet_link = entry_points[0].get("uri") if entry_points else None
+
+        logger.info(f"Event created: {event_html_link}")
+        logger.info(f"Google Meet Link: {meet_link}")
+
+        return event_id, event_html_link, meet_link
 
     except Exception as e:
         logger.error(f"캘린더에 이벤트 추가 중 오류 발생: {e}")

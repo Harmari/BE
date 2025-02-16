@@ -90,6 +90,7 @@ async def get_current_user(request: Request) -> dict:
     
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str): 
     """JWT를 httpOnly Secure 쿠키에 저장"""
+
     # 쿠키에 Access Token 저장
     response.set_cookie(
         key="access_token",
@@ -127,11 +128,12 @@ async def get_auth_user(request: Request):
         return await verify_access_token(access_token)
 
     # 개발 단계: 로컬 프론트엔드 URL이 아닌 경우 토큰 검증 후 반환 (인증 정보 없으면 None)
-    if frontend_url in allowed_frontend_urls:
-        return await validate_token()
+    # if frontend_url in allowed_frontend_urls:
+    #     return await validate_token()
 
     # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
     access_token = request.cookies.get("access_token")
+    logging.info("access_token ::::: %s", access_token)
     if not access_token:
         logging.info("인증 정보 없음")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")

@@ -197,14 +197,21 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
     logger.info(f"Reservation created/updated with id: {new_id}")
 
     # 구글 캘린더에 이벤트 추가
-    user_email = user.get("email")
+    # user_email = user.get("email")
+    user_email = "hsc0125@knou.ac.kr"
     if user_email:
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
-        event_id = await add_event_to_user_calendar(user_email, event_date)
+        event_id, event_html_link, meet_link = await add_event_to_user_calendar(user_email, access_token=request.cookies.get("access_token"), event_date=event_date)
         # 이벤트 ID를 데이터베이스에 저장
         await collection.update_one(
             {"_id": new_id},
-            {"$set": {"google_event_id": event_id}}
+            {
+                "$set": {
+                    "google_event_id": event_id,
+                    "google_calendar_url": event_html_link,
+                    "google_meet_link": meet_link
+                }
+            }
         )
 
     response = ReservationCreateResponse(
