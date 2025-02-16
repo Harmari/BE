@@ -41,7 +41,7 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
     reservations_cursor = collection.find({
         "designer_id": designer_obj_id,
         "reservation_date_time": {"$gte": now_str, "$lte": three_months_ahead_str},
-        "del_yn": "n",
+        "del_yn": "N",
         "status": "예약완료"
     })
 
