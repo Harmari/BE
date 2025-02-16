@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     GOOGLE_CREDENTIALS_PATH: str
     TOKEN_PATH: str
 
+    # Calendar
+    ADMIN_CALENDAR_ID: str
+
     # JWT
     SECRET_KEY: str
     REFRESH_SECRET_KEY: str
