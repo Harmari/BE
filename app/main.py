@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.exceptions import HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +17,7 @@ from app.db.session import get_database
 # 결제
 from app.api.payment.router import router as payment_router
 from app.scheduler.schedulers import start_scheduler
+from app.middleware.combined_cors import CombinedCorsMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,13 +42,13 @@ app = FastAPI(title="할머리?머리하실?", description="API Documentation", 
 db = get_database()
 
 # Add CORS middleware to handle OPTIONS requests
-app.add_middleware(
-    CORSMiddleware,
-    # allow_origins=[origin.strip() for origin in settings.FRONTEND_URL.split(",")],  # 허용할 오리진
-    allow_methods=["GET", "POST", "OPTIONS"],  # 허용할 HTTP 메서드
-    allow_headers=["*"],  # 허용할 HTTP 헤더
-    allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[settings.FRONTEND_URL],  # 허용할 Origin
+#     allow_methods=["GET", "POST", "OPTIONS"],  # 허용할 HTTP 메서드
+#     allow_headers=["*"],  # 허용할 HTTP 헤더
+#     allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부
+# )
 
 app.add_middleware(ClientOriginMiddleware)
 
