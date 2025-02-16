@@ -147,6 +147,7 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
         "mode": request.mode,
         "status": "예약완료",  # 최종 상태
         "update_at": current_time_str,
+        "del_yn": "N"
     }
 
     if request.reservation_id:
