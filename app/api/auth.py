@@ -27,15 +27,12 @@ async def login():
     return await get_google_auth_url()
 
 @router.get("/callback")
-async def auth_callback(request: Request, response: Response):
-
-    # 접근한 URL로 동적 변경
+async def auth_callback(request: Request):
+    """Google OAuth 리디렉션 처리 후 액세스 토큰 반환"""
     FRONTEND_URL = getattr(request.state, "client_origin", None)
     if not FRONTEND_URL:
-        # client_origin이 없다면
         raise HTTPException(status_code=400, detail="접근할 수 없는 URL")
 
-    """Google OAuth 리디렉션 처리 후 로그인"""
     try:
         code = request.query_params.get("code")
         if not code:
@@ -55,24 +52,12 @@ async def auth_callback(request: Request, response: Response):
             logger.error("3. 로그인 실패 - 사용자 정보 없음")
             raise HTTPException(status_code=400, detail="3. 로그인 실패")
 
-        # 로그인 성공 시 쿠키 설정
-        await authenticate_user(userinfo, response)
         logger.info(f"사용자 로그인 성공: {userinfo['email']}")
 
-        # 토큰 값을 URL 쿼리스트링으로 전달 임시방편이니까 나중에 꼭 수정
-        # query_params = urlencode({
-        #     "access_token": access_token,
-        #     "refresh_token": refresh_token
-        # })
-        # redirect_url = f"{FRONTEND_URL}/designer-list?{query_params}"
-
-        # 로그인 성공 후 프론트엔드로 리디렉트
-        redirect_url = f"{FRONTEND_URL}/designer-list"
-
-        logger.info(f"header: {response.headers}")
-        logger.info(f"Redirecting to: {redirect_url}")
-
-        return JSONResponse({"success": True, "redirect_url": redirect_url})
+        return JSONResponse({
+            "success": True,
+            "userinfo": userinfo
+        })
 
     except HTTPException as e:
         logger.error(f"로그인 중 오류 발생: {str(e.detail)}")
@@ -81,6 +66,27 @@ async def auth_callback(request: Request, response: Response):
     except Exception as e:
         logger.exception("4. 로그인 실패 - 알 수 없는 오류 발생")
         return RedirectResponse(url=f"{FRONTEND_URL}/login?error=로그인 실패", status_code=302)
+
+@router.post("/set-cookie")
+async def set_cookie(request: Request, response: Response):
+    """액세스 토큰을 받아 쿠키를 설정하는 엔드포인트"""
+    try:
+        data = await request.json()
+        userinfo = data.get("userinfo")
+
+        if not userinfo or "email" not in userinfo:
+            raise HTTPException(status_code=400, detail="유효하지 않은 사용자 정보")
+
+        # 사용자 인증 처리
+        await authenticate_user(userinfo, response)
+
+        logger.info(f"쿠키 설정 완료: {userinfo['email']}")
+        return JSONResponse({"message": "쿠키 설정 완료"})
+
+    except Exception as e:
+        logger.exception("쿠키 설정 중 오류 발생")
+        raise HTTPException(status_code=500, detail="쿠키 설정 실패")
+
     
 @router.post("/refresh")
 async def refresh_token(request: Request, response: Response):
