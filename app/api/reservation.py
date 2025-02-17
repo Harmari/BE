@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Request, Depends
+from fastapi import APIRouter, HTTPException, status, Request, Depends, requests
 
 from app.core.security import get_auth_user
 from app.schemas.reservation_schema import (
@@ -30,9 +30,9 @@ async def reservation_list_endpoint(request: ReservationListRequest):
         )
 
 @router.post("/create", response_model=ReservationCreateResponse)
-async def reservation_list_endpoint(request: ReservationCreateRequest, user : dict = Depends(get_auth_user)):
+async def reservation_list_endpoint(request: ReservationCreateRequest, cookie_request: requests, user : dict = Depends(get_auth_user)):
     try:
-        reservation_list = await reservation_create_service(request, user)
+        reservation_list = await reservation_create_service(request, cookie_request, user)
         return reservation_list
     except ValueError as e:
         raise HTTPException(

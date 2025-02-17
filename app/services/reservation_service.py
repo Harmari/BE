@@ -1,4 +1,5 @@
 import logging
+from fastapi import Request
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import pytz
@@ -64,7 +65,7 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
     return response
 
 
-async def reservation_create_service(request: ReservationCreateRequest, user: Dict[str, Any]) -> ReservationCreateResponse:
+async def reservation_create_service(request: ReservationCreateRequest, cookie_request: Request, user: Dict[str, Any]) -> ReservationCreateResponse:
     dt_str = request.reservation_date_time.strip()
     now_kst = datetime.now(kst)
 
@@ -201,7 +202,10 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
     # user_email = "hsc0125@knou.ac.kr"
     if user_email:
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
-        event_id, event_html_link, meet_link = await add_event_to_user_calendar(user_email, access_token=request.cookies.get("access_token"), event_date=event_date)
+        event_id, event_html_link, meet_link = await add_event_to_user_calendar(
+            user_email,
+            access_token=cookie_request.cookies.get("access_token"),
+            event_date=event_date)
         # 이벤트 ID를 데이터베이스에 저장
         await collection.update_one(
             {"_id": new_id},
