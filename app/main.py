@@ -50,7 +50,7 @@ db = get_database()
 #     allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부
 # )
 
-app.add_middleware(ClientOriginMiddleware)
+app.add_middleware(CombinedCorsMiddleware) # type: ignore
 
 # 에러 로깅
 @app.exception_handler(Exception)
