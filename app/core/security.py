@@ -90,7 +90,6 @@ async def get_current_user(request: Request) -> dict:
     
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str): 
     """JWT를 httpOnly Secure 쿠키에 저장"""
-
     # 쿠키에 Access Token 저장
     response.set_cookie(
         key="access_token",
@@ -98,7 +97,6 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         httponly=True,
         secure=True,
         samesite="None",
-        domain="https://harmari.duckdns.org",
     )
 
     # 쿠키에 Refresh Token 저장
@@ -108,7 +106,6 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         httponly=True,
         secure=True,
         samesite="None",
-        domain="https://harmari.duckdns.org",
     )
 
 def clear_auth_cookies(response: Response): 

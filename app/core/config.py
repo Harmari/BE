@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     KAKAO_PAY_API_HOST: str
 
     # Frontend
-    FRONTEND_URL: str
+    FRONTEND_URL: str = "https://harmari-fe.vercel.app"
 
     class Config:
         env_file = 'real.env'

@@ -66,14 +66,17 @@ async def auth_callback(request: Request, response: Response):
         # redirect_url = f"{FRONTEND_URL}/designer-list?{query_params}"
 
         # 로그인 성공 후 프론트엔드로 리디렉트
-        redirect_url = f"{FRONTEND_URL}/designer-list"
+        redirect_url = "https://harmari-fe.vercel.app/designer-list"
         logger.info(f"Redirecting to: {redirect_url}")
 
         return RedirectResponse(url=redirect_url, status_code=302)
 
     except HTTPException as e:
         logger.error(f"로그인 중 오류 발생: {str(e.detail)}")
-        return RedirectResponse(url=f"{FRONTEND_URL}/login?error={str(e.detail)}", status_code=302)
+        return RedirectResponse(
+            url=f"https://harmari-fe.vercel.app/login?error={str(e.detail)}", 
+            status_code=302
+        )
 
     except Exception as e:
         logger.exception("4. 로그인 실패 - 알 수 없는 오류 발생")
