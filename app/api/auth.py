@@ -59,20 +59,15 @@ async def auth_callback(request: Request, response: Response):
         await authenticate_user(userinfo, response)
         logger.info(f"사용자 로그인 성공: {userinfo['email']}")
 
-        # 토큰 값을 URL 쿼리스트링으로 전달 임시방편이니까 나중에 꼭 수정
-        # query_params = urlencode({
-        #     "access_token": access_token,
-        #     "refresh_token": refresh_token
-        # })
-        # redirect_url = f"{FRONTEND_URL}/designer-list?{query_params}"
-
         # 로그인 성공 후 프론트엔드로 리디렉트
         redirect_url = f"{FRONTEND_URL}/designer-list"
 
-        logger.info(f"header: {response.headers}")
         logger.info(f"Redirecting to: {redirect_url}")
 
-        return JSONResponse({"success": True, "redirect_url": redirect_url})
+        # JSONResponse 대신 Response 반환 (쿠키 저장 보장)
+        response.status_code = 302
+        response.headers["Location"] = redirect_url
+        return response  
 
     except HTTPException as e:
         logger.error(f"로그인 중 오류 발생: {str(e.detail)}")

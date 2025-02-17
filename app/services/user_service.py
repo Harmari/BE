@@ -45,6 +45,11 @@ async def authenticate_user(user_info: dict, response: Response) -> dict:
 
     new_user = await create_user(new_user_data)
 
+    refresh_token = create_refresh_token({"sub": email})
+    access_token = create_access_token({"sub": email})
+
+    set_auth_cookies(response, access_token, refresh_token)
+
     return {"message": "회원가입 성공", "user": new_user}
 
 async def refresh_access_token(request: Request, response: Response):
