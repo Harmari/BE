@@ -40,13 +40,20 @@ app = FastAPI(title="할머리?머리하실?", description="API Documentation", 
 
 db = get_database()
 
-# Add CORS middleware to handle OPTIONS requests
+# 개발 환경과 프로덕션 환경의 origins를 모두 허용
+origins = [
+    "https://harmari-fe.vercel.app",  # 프로덕션
+    "http://localhost:5173",          # 로컬 개발
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://harmari-fe.vercel.app"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 필요한 메서드 명시
+    allow_headers=["Content-Type", "Set-Cookie", "Authorization"],       # 필요한 헤더 명시
+    expose_headers=["Content-Type", "Set-Cookie"],                       # 클라이언트에 노출할 헤더
+    max_age=3600,                                                        # preflight 요청 캐시 시간
 )
 
 # 에러 로깅

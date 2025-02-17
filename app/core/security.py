@@ -90,22 +90,26 @@ async def get_current_user(request: Request) -> dict:
     
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str): 
     """JWT를 httpOnly Secure 쿠키에 저장"""
-    # 쿠키에 Access Token 저장
+    cookie_settings = {
+        "httponly": True,
+        "secure": True,  # HTTPS에서만 동작
+        "samesite": "None",  # Cross-Origin 요청 허용
+        "max_age": 3600,     # 쿠키 유효 시간 (1시간)
+        "path": "/"          # 모든 경로에서 접근 가능
+    }
+
+    # Access Token 쿠키 설정
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="None",
+        **cookie_settings
     )
 
-    # 쿠키에 Refresh Token 저장
+    # Refresh Token 쿠키 설정
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="None",
+        **cookie_settings
     )
 
 def clear_auth_cookies(response: Response): 
