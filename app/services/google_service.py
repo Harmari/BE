@@ -49,11 +49,11 @@ async def add_event_to_user_calendar(user_email: str, access_token: str, event_d
             "summary": "블리스 헤어 상담소",
             "description": "블리스 헤어 상담소 예약 이벤트",
             "start": {
-                "dateTime": event_date.isoformat(),
+                "dateTime": event_date_obj.isoformat(),  # 수정: event_date_obj 사용
                 "timeZone": "Asia/Seoul",
             },
             "end": {
-                "dateTime": (event_date + timedelta(hours=1)).isoformat(),
+                "dateTime": (event_date_obj + timedelta(hours=1)).isoformat(),  # 수정: event_date_obj 사용
                 "timeZone": "Asia/Seoul",
             },
             "attendees": [
