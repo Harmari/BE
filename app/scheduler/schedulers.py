@@ -29,12 +29,12 @@ async def delete_temp_reservations():
     # 삭제 전 조건에 맞는 id조회
     matching_docs = await db["reservations"].find(delete_filter, {"_id": 1}).to_list(length=None)
     deleted_ids = [doc["_id"] for doc in matching_docs]
-    logger.info(f"[{now.isoformat()}] 삭제할 _id들: {deleted_ids}")
+    # logger.info(f"[{now.isoformat()}] 삭제할 _id들: {deleted_ids}")
 
     result = await db["reservations"].delete_many(delete_filter)
-    logger.info(
-        f"[{now.isoformat()}] {result.deleted_count}건 임시예약 데이터 삭제."
-    )
+    # logger.info(
+    #     f"[{now.isoformat()}] {result.deleted_count}건 임시예약 데이터 삭제."
+    # )
 
 
 async def delete_waiting_reservations():
@@ -57,11 +57,11 @@ async def delete_waiting_reservations():
     # 업데이트 전에 조건에 맞는 _id 조회
     matching_docs = await db["reservations"].find(delete_filter, {"_id": 1}).to_list(length=None)
     update_ids = [doc["_id"] for doc in matching_docs]
-    logger.info(f"[{now.isoformat()}] 예약대기 _ids: {update_ids}")
+    # logger.info(f"[{now.isoformat()}] 예약대기 _ids: {update_ids}")
 
     # 조건에 맞는 문서들의 del_yn을 "Y"로 업데이트
     result = await db["reservations"].update_many(delete_filter, {"$set": {"status": "예약취소"}})
-    logger.info(f"[{now.isoformat()}] {result.modified_count}건 예약대기 데이터 예약취소처리.")
+    # logger.info(f"[{now.isoformat()}] {result.modified_count}건 예약대기 데이터 예약취소처리.")
 
 
 # 스케줄러 설정
