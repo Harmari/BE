@@ -3,6 +3,11 @@ from starlette.types import ASGIApp
 from starlette.responses import Response
 from fastapi import Request
 from app.core.config import settings
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CombinedCorsMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
