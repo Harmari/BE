@@ -144,4 +144,6 @@ async def get_auth_user(request: Request):
     if not user:
         logging.info("잘못되거나 만료된 토큰")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+
+    user["access_token"] = access_token
     return user
