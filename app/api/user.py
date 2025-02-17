@@ -18,7 +18,7 @@ async def get_logged_in_user(request: Request):
 
     # 토큰 검증
     try:
-        payload = verify_access_token(access_token)
+        payload = await verify_access_token(access_token)
         email = payload.get("sub")  # 토큰에서 이메일 추출
         if not email:
             raise HTTPException(status_code=401, detail="토큰이 문제 있음")
@@ -55,7 +55,7 @@ async def delete_logged_in_user(request: Request, response: Response):
 
     # 토큰 검증
     try:
-        payload = verify_access_token(access_token)
+        payload = await verify_access_token(access_token)
         email = payload.get("sub")  # 토큰에서 이메일 추출
         if not email:
             raise HTTPException(status_code=401, detail="토큰이 문제 있음")

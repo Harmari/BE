@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class CombinedCorsMiddleware(BaseHTTPMiddleware):
+class CorsMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         super().__init__(app)
         # 여러 URL이 있을 경우 쉼표로 구분하여 설정값을 읽음
@@ -26,7 +26,7 @@ class CombinedCorsMiddleware(BaseHTTPMiddleware):
         chosen_origin = origin if origin in self.allowed_origins else self.allowed_origins[0]
         request.state.client_origin = chosen_origin  # 필요 시 앱에서 사용
 
-        logger.info("Request cookies: %s", request.cookies)
+        # logger.info("Request cookies: %s", request.cookies)
 
         # preflight OPTIONS 요청인 경우, 빈 응답을 생성합니다.
         if request.method == "OPTIONS":

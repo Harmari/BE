@@ -9,7 +9,6 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from app.core.utils import ClientOriginMiddleware
 
 from app.api import test, reservation, auth, user, designer
 from app.core.config import settings
@@ -17,7 +16,7 @@ from app.db.session import get_database
 # 결제
 from app.api.payment.router import router as payment_router
 from app.scheduler.schedulers import start_scheduler
-from app.middleware.combined_cors import CombinedCorsMiddleware
+from app.middleware.cors_middleware import CorsMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -41,16 +40,8 @@ app = FastAPI(title="할머리?머리하실?", description="API Documentation", 
 
 db = get_database()
 
-# Add CORS middleware to handle OPTIONS requests
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[settings.FRONTEND_URL],  # 허용할 Origin
-#     allow_methods=["GET", "POST", "OPTIONS"],  # 허용할 HTTP 메서드
-#     allow_headers=["*"],  # 허용할 HTTP 헤더
-#     allow_credentials=True,  # 쿠키나 인증 정보 전달 허용 여부
-# )
-
-app.add_middleware(CombinedCorsMiddleware) # type: ignore
+# 미들웨어 설정
+app.add_middleware(CorsMiddleware) # type: ignore
 
 # 에러 로깅
 @app.exception_handler(Exception)

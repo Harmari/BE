@@ -52,7 +52,7 @@ def create_refresh_token(data: dict) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"error : {str(e)}")
 
-def verify_access_token(token: str) -> dict:
+async def verify_access_token(token: str) -> dict:
     """JWT Access Token 검증"""
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -82,7 +82,7 @@ async def get_current_user(request: Request) -> dict:
         if not access_token:
             raise HTTPException(status_code=401, detail="Access Token이 제공되지 않았습니다.")
 
-        return verify_access_token(access_token)
+        return await verify_access_token(access_token)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -123,13 +123,12 @@ async def get_auth_user(request: Request):
     frontend_url = getattr(request.state, "client_origin", None)
     logging.info("접근한 URL ::::: %s", frontend_url)
 
-    allowed_frontend_urls = settings.FRONTEND_URL.split(",")
-
-    async def validate_token() -> dict | None:
-        access_token = request.cookies.get("access_token")
-        if not access_token:
-            return None
-        return await verify_access_token(access_token)
+    # allowed_frontend_urls = settings.FRONTEND_URL.split(",")
+    # async def validate_token() -> dict | None:
+    #     access_token = request.cookies.get("access_token")
+    #     if not access_token:
+    #         return None
+    #     return await verify_access_token(access_token)
 
     # 개발 단계: 로컬 프론트엔드 URL이 아닌 경우 토큰 검증 후 반환 (인증 정보 없으면 None)
     # if frontend_url in allowed_frontend_urls:
@@ -137,7 +136,7 @@ async def get_auth_user(request: Request):
 
     # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
     access_token = request.cookies.get("access_token")
-    logging.info("access_token ::::: %s", access_token)
+    # logging.info("access_token ::::: %s", access_token)
     if not access_token:
         logging.info("인증 정보 없음")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
