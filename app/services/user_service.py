@@ -9,43 +9,31 @@ from app.core.security import (
 )
 from app.schemas.user_schema import UserCreateRequest, UserCreateResponse
 from app.core.config import settings
+import logging
 
-async def authenticate_user(user_info: dict, response: Response) -> dict:
-    """OAuth 인증 후 기존 회원 여부 확인 및 로그인 처리"""
-    email = user_info["email"]
-    print("사용자 생성 요청: ", user_info)
+logger = logging.getLogger(__name__)
 
+async def authenticate_user(userinfo: dict, response: Response) -> dict:
+    """사용자 인증 및 토큰 발급"""
     try:
-        existing_user = await get_user_by_email(email)
-    except HTTPException as e:
-        existing_user = None
-
-    if existing_user:
-        if existing_user.status in ["inactive", "banned"]:
-            raise HTTPException(status_code=403, detail="사용이 제한된 사용자")
-
-        refresh_token = create_refresh_token({"sub": email})
-        access_token = create_access_token({"sub": email})
-
+        email = userinfo["email"]
+        
+        # JWT 토큰 생성
+        access_token = create_access_token(data={"sub": email})
+        refresh_token = create_refresh_token(data={"sub": email})
+        
+        # 쿠키에 토큰 설정
         set_auth_cookies(response, access_token, refresh_token)
-
-        return {"message": "로그인 성공"}
-
-    # 새로운 사용자 등록
-    new_user_data = UserCreateRequest(
-        email=email,
-        google_id=user_info["id"],
-        name=user_info.get("name", "Unknown"),
-        profile_image=user_info.get("picture"),
-        provider="google",
-        status="active",
-        created_at=settings.CURRENT_DATETIME,
-        updated_at=settings.CURRENT_DATETIME
-    )
-
-    new_user = await create_user(new_user_data)
-
-    return {"message": "회원가입 성공", "user": new_user}
+        
+        # 로그 추가
+        logger.info(f"Cookies set for user: {email}")
+        logger.info(f"Response headers: {dict(response.headers)}")
+        
+        return {"success": True, "message": "로그인 성공"}
+        
+    except Exception as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"인증 실패: {str(e)}")
 
 async def refresh_access_token(request: Request, response: Response):
     """Refresh Token을 이용해 Access Token 재발급"""

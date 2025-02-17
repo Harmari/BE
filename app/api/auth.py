@@ -27,14 +27,6 @@ async def login():
 
 @router.get("/callback")
 async def auth_callback(request: Request, response: Response):
-
-    # 접근한 URL로 동적 변경
-    FRONTEND_URL = getattr(request.state, "client_origin", None)
-    if not FRONTEND_URL:
-        # client_origin이 없다면
-        raise HTTPException(status_code=400, detail="접근할 수 없는 URL")
-
-    """Google OAuth 리디렉션 처리 후 로그인"""
     try:
         code = request.query_params.get("code")
         if not code:
@@ -54,28 +46,38 @@ async def auth_callback(request: Request, response: Response):
             logger.error("3. 로그인 실패 - 사용자 정보 없음")
             raise HTTPException(status_code=400, detail="3. 로그인 실패")
 
-        # 로그인 성공 시 쿠키 설정
-        await authenticate_user(userinfo, response)
-        logger.info(f"사용자 로그인 성공: {userinfo['email']}")
-
         # 요청의 Origin 헤더 확인
         origin = request.headers.get("origin")
         is_local = origin and "localhost" in origin
         frontend_url = "http://localhost:5173" if is_local else "https://harmari-fe.vercel.app"
+        
+        # RedirectResponse 생성
+        redirect_response = RedirectResponse(
+            url=f"{frontend_url}/designer-list",
+            status_code=302
+        )
 
-        # 로그인 성공 후 프론트엔드로 리디렉트
-        redirect_url = f"{frontend_url}/designer-list"
-        logger.info(f"Redirecting to: {redirect_url}")
-
-        return RedirectResponse(url=redirect_url, status_code=302)
+        # 로그인 성공 시 쿠키 설정 (RedirectResponse에 직접 설정)
+        await authenticate_user(userinfo, redirect_response)
+        logger.info(f"사용자 로그인 성공: {userinfo['email']}")
+        
+        # 쿠키가 설정된 리다이렉트 응답 반환
+        return redirect_response
 
     except HTTPException as e:
-        error_redirect = f"{frontend_url}/login?error={str(e.detail)}"
-        return RedirectResponse(url=error_redirect, status_code=302)
+        error_response = RedirectResponse(
+            url=f"{frontend_url}/login?error={str(e.detail)}", 
+            status_code=302
+        )
+        return error_response
 
     except Exception as e:
         logger.exception("4. 로그인 실패 - 알 수 없는 오류 발생")
-        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=로그인 실패", status_code=302)
+        error_response = RedirectResponse(
+            url=f"{frontend_url}/login?error=로그인 실패", 
+            status_code=302
+        )
+        return error_response
     
 @router.post("/refresh")
 async def refresh_token(request: Request, response: Response):
