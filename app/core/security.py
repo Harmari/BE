@@ -98,7 +98,8 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         httponly=True,
         secure=True,
         samesite="None",
-        domain="https://harmari.duckdns.org",
+        domain="harmari.duckdns.org",
+        path="/"
     )
 
     # 쿠키에 Refresh Token 저장
@@ -108,7 +109,8 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         httponly=True,
         secure=True,
         samesite="None",
-        domain="https://harmari.duckdns.org",
+        domain="harmari.duckdns.org",
+        path="/"
     )
 
 def clear_auth_cookies(response: Response): 
