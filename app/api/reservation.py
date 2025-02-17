@@ -50,8 +50,6 @@ async def reservation_list_endpoint(request: ReservationCreateRequest, user : di
 async def read_reservations(user_id: str):
     try:
         reservations = await get_reservations_list_by_user_id(user_id)
-        if not reservations:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
         return reservations
     except ValueError as e:
         raise HTTPException(

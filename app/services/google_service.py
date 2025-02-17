@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 # TOKEN_PATH = settings.TOKEN_PATH
 TOKEN_PATH = os.path.join(os.getcwd(), "token.json")
-SERVICE_ACCOUNT_PATH = os.path.join(os.getcwd(), "service_account.json")
 GOOGLE_CREDENTIALS_PATH = settings.GOOGLE_CREDENTIALS_PATH
 SCOPES = settings.GOOGLE_SCOPES
 
@@ -102,7 +101,7 @@ def update_event_with_meet_link(event_id):
     try:
         creds = get_service_account_credentials()
         service = build('calendar', 'v3', credentials=creds)
-        event = service.events().get(calendarId=ADMIN_CALENDAR_ID, eventId=event_id).execute()
+        event = service.events().get(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
 
         # Google Meet 링크 자동 생성
         event['conferenceData'] = {
@@ -113,7 +112,7 @@ def update_event_with_meet_link(event_id):
         }
 
         updated_event = service.events().update(
-            calendarId=ADMIN_CALENDAR_ID,
+            calendarId=DESIGNER_EMAIL,
             eventId=event_id,
             body=event,
             conferenceDataVersion=1
@@ -137,9 +136,9 @@ def delete_google_calendar_event(event_id):
 
     try:
         # 이벤트가 존재하는지 확인
-        event = service.events().get(calendarId=ADMIN_CALENDAR_ID, eventId=event_id).execute()
+        event = service.events().get(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
         if event:
-            service.events().delete(calendarId=ADMIN_CALENDAR_ID, eventId=event_id).execute()
+            service.events().delete(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
             logger.info('--------------------------------구글캘린더 이벤트 삭제: %s' % event_id)
     except Exception as e:
         logger.error(f"이벤트 삭제 중 오류 발생: {e}")

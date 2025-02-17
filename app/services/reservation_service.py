@@ -229,6 +229,9 @@ async def get_reservations_list_by_user_id(user_id: str) -> List[ReservationSimp
     reservations_cursor = collection.find({"user_id": ObjectId(user_id)}).sort("reservation_date_time", -1)
     reservations = await reservations_cursor.to_list(length=None)
 
+    if not reservations:
+        return []
+    
     return [
         ReservationSimple(
             **{
