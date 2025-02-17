@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Request, HTTPException, Response
 import logging
 from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.services.auth_service import (
     get_google_auth_url,
@@ -67,9 +68,11 @@ async def auth_callback(request: Request, response: Response):
 
         # 로그인 성공 후 프론트엔드로 리디렉트
         redirect_url = f"{FRONTEND_URL}/designer-list"
+
+        logger.info(f"header: {response.headers}")
         logger.info(f"Redirecting to: {redirect_url}")
 
-        return RedirectResponse(url=redirect_url, status_code=302)
+        return JSONResponse({"success": True, "redirect_url": redirect_url})
 
     except HTTPException as e:
         logger.error(f"로그인 중 오류 발생: {str(e.detail)}")
