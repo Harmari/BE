@@ -21,6 +21,8 @@ class CombinedCorsMiddleware(BaseHTTPMiddleware):
         chosen_origin = origin if origin in self.allowed_origins else self.allowed_origins[0]
         request.state.client_origin = chosen_origin  # 필요 시 앱에서 사용
 
+        logger.info("Request cookies: %s", request.cookies)
+
         # preflight OPTIONS 요청인 경우, 빈 응답을 생성합니다.
         if request.method == "OPTIONS":
             response = Response(status_code=200)

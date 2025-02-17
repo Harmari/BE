@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from app.core.utils import ClientOriginMiddleware
@@ -161,5 +161,8 @@ async def root():
     </html>
     """
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("favicon.ico")
 
 # uvicorn app.main:app --reload
