@@ -30,9 +30,9 @@ async def reservation_list_endpoint(request: ReservationListRequest):
         )
 
 @router.post("/create", response_model=ReservationCreateResponse)
-async def reservation_list_endpoint(request: ReservationCreateRequest, cookie_request: Request, user : dict = Depends(get_auth_user)):
+async def reservation_list_endpoint(request: ReservationCreateRequest, user : dict = Depends(get_auth_user)):
     try:
-        reservation_list = await reservation_create_service(request, cookie_request, user)
+        reservation_list = await reservation_create_service(request, user)
         return reservation_list
     except ValueError as e:
         raise HTTPException(
