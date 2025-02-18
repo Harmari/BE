@@ -59,23 +59,20 @@ async def add_event_to_user_calendar(user_email: str,
         # DESIGNER_EMAIL은 추후 디자이너id로 eamil 조회해와서 하는걸로 수정
         event_body = {
             "summary": "블리스 헤어 상담소",
-            "description": f"""💈 블리스 헤어 상담소 ❤️❤️💈\n
 
-🩷'{designer_specialist}' 전문가 디자이너 💇🏼‍♀️💆🏻‍♂️\n
+            "description": f"""\n💈 블리스 헤어 상담소 ❤️❤️💈
+🩷'{designer_specialist}' 전문 디자이너 💇🏼‍♀️💆🏻‍♂️
+💃🏻'{designer_name}'님(과)의 '{mode}'상담 일정입니다 💆‍♀️
+📍{designer_region}
+{designer_name}님은요... {designer_introduction}!!
 
-💃🏻{designer_name} 와(과)의 '{mode}' 상담 일정입니다 💆‍♀️\n 
+❗️'비대면'상담 주의사항❗️
+    - 미리 캘린더에 생성된 Google Meet 링크를 통해 상담을 진행합니다.
+    - 시간은 금 ! 상담은 정시에 시작됩니다 💜
 
-📍{designer_region}\n
-
-{designer_introduction}\n
-
-❗️'비대면'상담 주의사항❗️\n
-    - 미리 캘린더에 생성된 Google Meet 링크를 통해 상담을 진행합니다. \n
-    - 시간은 금 ! 상담은 정시에 시작됩니다 💜\n
-
-❗️'대면'상담 주의사항❗️\n
-    - 💈{designer_shop_address}\n
-    - 디자이너 쌤이 있는곳 GoGo!! \n
+❗️'대면'상담 주의사항❗️
+    - 💈{designer_shop_address}
+    - 디자이너 쌤이 있는곳 GoGo!!
     - 🧡 10분 전에 도착해주세요!
     
             """,
@@ -84,7 +81,7 @@ async def add_event_to_user_calendar(user_email: str,
                 "timeZone": "Asia/Seoul",
             },
             "end": {
-                "dateTime": (event_date_obj + timedelta(hours=1)).isoformat(),  # 수정: event_date_obj 사용
+                "dateTime": (event_date_obj + timedelta(minutes=30)).isoformat(),  # 수정: event_date_obj 사용
                 "timeZone": "Asia/Seoul",
             },
             "attendees": [
@@ -161,15 +158,14 @@ def update_event_with_meet_link(event_id):
         return None
 
 
-def delete_google_calendar_event(event_id):
-    creds = get_service_account_credentials()
-    service = build('calendar', 'v3', credentials=creds)
+def delete_google_calendar_event(event_id, credentials:Credentials):
+    service = build('calendar', 'v3', credentials=credentials)
 
     try:
         # 이벤트가 존재하는지 확인
-        event = service.events().get(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
+        event = service.events().get(calendarId='primary', eventId=event_id).execute()
         if event:
-            service.events().delete(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
+            service.events().delete(calendarId='primary', eventId=event_id).execute()
             logger.info('--------------------------------구글캘린더 이벤트 삭제: %s' % event_id)
     except Exception as e:
         logger.error(f"이벤트 삭제 중 오류 발생: {e}")
