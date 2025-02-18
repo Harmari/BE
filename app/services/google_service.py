@@ -31,7 +31,15 @@ def get_service_account_credentials(access_token: str):
         return None
 
 
-async def add_event_to_user_calendar(user_email: str, credentials: Credentials, event_date: datetime):
+async def add_event_to_user_calendar(user_email: str, 
+                                     credentials: Credentials, 
+                                     event_date: datetime, 
+                                     designer_name: str, 
+                                     designer_introduction: str, 
+                                     designer_region: str, 
+                                     designer_specialist: str, 
+                                     designer_shop_address: str,
+                                     mode: str):
 
     logging.info(f"credentials ============ add_event_to_user_calendar ===========> {credentials}")
 
@@ -51,7 +59,26 @@ async def add_event_to_user_calendar(user_email: str, credentials: Credentials, 
         # DESIGNER_EMAIL은 추후 디자이너id로 eamil 조회해와서 하는걸로 수정
         event_body = {
             "summary": "블리스 헤어 상담소",
-            "description": "블리스 헤어 상담소 예약 이벤트",
+            "description": f"""💈 블리스 헤어 상담소 ❤️❤️💈\n
+
+🩷'{designer_specialist}' 전문가 디자이너 💇🏼‍♀️💆🏻‍♂️\n
+
+💃🏻{designer_name} 와(과)의 '{mode}' 상담 일정입니다 💆‍♀️\n 
+
+📍{designer_region}\n
+
+{designer_introduction}\n
+
+❗️'비대면'상담 주의사항❗️\n
+    - 미리 캘린더에 생성된 Google Meet 링크를 통해 상담을 진행합니다. \n
+    - 시간은 금 ! 상담은 정시에 시작됩니다 💜\n
+
+❗️'대면'상담 주의사항❗️\n
+    - 💈{designer_shop_address}\n
+    - 디자이너 쌤이 있는곳 GoGo!! \n
+    - 🧡 10분 전에 도착해주세요!
+    
+            """,
             "start": {
                 "dateTime": event_date_obj.isoformat(),  # 수정: event_date_obj 사용
                 "timeZone": "Asia/Seoul",

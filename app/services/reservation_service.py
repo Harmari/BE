@@ -131,7 +131,7 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
     if not designer:
         logger.error(f"디자이너를 찾을 수 없음: {request.designer_id}")
         raise ValueError("해당 designer_id에 해당하는 디자이너가 존재하지 않습니다.")
-
+    
     try:
         user_obj_id = ObjectId(request.user_id)
     except Exception as e:
@@ -143,6 +143,15 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
     if not user:
         logger.error(f"사용자를 찾을 수 없음: {request.user_id}")
         raise ValueError("해당 user_id에 해당하는 사용자가 존재하지 않습니다.")
+
+    # 디자이너 정보 조회
+
+    # 디자이너 정보 조회
+    designer_name = designer.get("name")
+    designer_introduction = designer.get("introduction")
+    designer_region = designer.get("region")
+    designer_specialist = designer.get("specialties")
+    designer_shop_address = designer.get("shop_address")
 
     # 예약 데이터 업데이트/삽입 시 사용할 데이터 준비
     update_data = {
@@ -209,11 +218,17 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
 
     if login_user:
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
-        # event_id, event_html_link, meet_link = await add_event_to_user_calendar(
         event_id, event_html_link, meet_link=await add_event_to_user_calendar(
             user_email,
             credentials=login_user.get("credentials"),
-            event_date=event_date)
+            event_date=event_date,
+            designer_name=designer_name,
+            designer_introduction=designer_introduction,
+            designer_region=designer_region,
+            designer_specialist=designer_specialist,
+            designer_shop_address=designer_shop_address,
+            mode=request.mode
+        )
 
         if event_id is None or event_html_link is None or meet_link is None :
             raise ValueError("Google Calendar 이벤트 생성에 실패했습니다.")
@@ -334,18 +349,8 @@ async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLi
         logger.error(f"비대면 모드가 아닙니다. reservation_id: {reservation_id}")
         raise ValueError("비대면 모드가 아닙니다. Google Meet링크를 생성할 수 없습니다.")
 
-    # 구글 밋 링크 생성 (목 데이터 사용)
-
-    event_id = reservation.get("google_event_id")
-    logger.info(f"--------------------event_id: {event_id}")
-    if event_id:
-        google_meet_link = update_event_with_meet_link(event_id)
-        # 데이터베이스에 링크 저장
-        await collection.update_one(
-            {"_id": ObjectId(reservation_id)},
-            {"$set": {"google_meet_link": google_meet_link}}
-        )
-
+    google_meet_link = reservation.get("google_meet_link")
+    
     return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
 
 
