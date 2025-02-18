@@ -128,16 +128,6 @@ def clear_auth_cookies(response: Response):
     response.delete_cookie("refresh_token")
 
 
-from fastapi import HTTPException, Request
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request as GoogleRequest
-from app.core.config import settings
-from app.services.auth_service import verify_access_token
-from app.db.session import get_database
-import logging
-
-logger = logging.getLogger(__name__)
-
 async def get_auth_user(request: Request) -> dict:
     # 쿠키에서 JWT 토큰 가져오기 (서버 자체에서 발급한 토큰)
     access_token_jwt = request.cookies.get("access_token")
