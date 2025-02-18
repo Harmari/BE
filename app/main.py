@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import test, reservation, auth, user, designer
+from app.api import test, reservation, auth, user, designer, bi
 from app.core.config import settings
 from app.db.session import get_database
 # 결제
@@ -136,6 +136,7 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(reservation.router,prefix="/reservation", tags=["reservation"])
 app.include_router(user.router, prefix="/user", tags=["user"])
 app.include_router(designer.designer_router, prefix="/designers", tags=["designers"])
+app.include_router(bi.router, prefix="/bi", tags=["BI"])
 
 # 결제 
 app.include_router(payment_router)

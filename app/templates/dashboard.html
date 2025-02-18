@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BI Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .metric-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>비즈니스 인텔리전스 대시보드</h1>
+        
+        <div class="metric-card">
+            <h2>전환율</h2>
+            <div class="chart-container">
+                <canvas id="conversionChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <h2>사용자 유지율</h2>
+            <div class="chart-container">
+                <canvas id="retentionChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <h2>성능 메트릭스</h2>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전환율 차트
+        const conversionCtx = document.getElementById('conversionChart').getContext('2d');
+        new Chart(conversionCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys({{ conversion_rates|tojson }}),
+                datasets: [{
+                    label: '전환율',
+                    data: Object.values({{ conversion_rates|tojson }}).map(d => d.conversion_rate * 100),
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // 유지율 차트
+        const retentionCtx = document.getElementById('retentionChart').getContext('2d');
+        const retentionData = {{ retention_data|tojson }};
+        new Chart(retentionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['활성 사용자', '비활성 사용자'],
+                datasets: [{
+                    data: [
+                        retentionData.active_users,
+                        retentionData.total_users - retentionData.active_users
+                    ],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 99, 132, 0.5)'
+                    ]
+                }]
+            }
+        });
+
+        // 성능 차트
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        const performanceData = {{ performance_data|tojson }};
+        new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: Object.keys(performanceData),
+                datasets: [{
+                    label: '평균 응답 시간 (ms)',
+                    data: Object.values(performanceData).map(d => d.avg_response_time),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            }
+        });
+    </script>
+</body>
+</html> 
