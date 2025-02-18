@@ -5,6 +5,7 @@ from app.db.session import get_database
 from app.core.config import settings
 from typing import Optional
 import json
+from datetime import datetime
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -28,6 +29,9 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             raise e
         finally:
             process_time = time.time() - start_time
+            
+            # 현재 시간을 datetime 객체로 가져오기
+            current_time = datetime.now()
             
             # 상세 메트릭스 수집
             path_parts = request.url.path.split('/')
@@ -61,8 +65,8 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 # 성능 메트릭스
                 "performance": {
                     "total_time_ms": round(process_time * 1000, 2),
-                    "time_of_day": settings.CURRENT_DATETIME.strftime("%H:%M"),
-                    "day_of_week": settings.CURRENT_DATETIME.strftime("%A"),
+                    "time_of_day": current_time.strftime("%H:%M"),
+                    "day_of_week": current_time.strftime("%A"),
                 },
                 
                 # 비즈니스 메트릭스
