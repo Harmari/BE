@@ -300,11 +300,11 @@ async def get_reservation_by_id(reservation_id: str) -> Optional[ReservationDeta
         )
 
 
-async def update_reservation_status(reservation_id: str) -> Optional[ReservationDetail]:
+async def update_reservation_status(reservation_id: str, user: dict) -> Optional[ReservationDetail]:
     # 예약 ID로 예약 정보 조회
     reservation = await collection.find_one({"_id": ObjectId(reservation_id)})
 
-    if not reservation:
+    if not reservation :
         logger.error(f"예약을 찾을 수 없습니다. reservation_id: {reservation_id}")
         raise ValueError("예약을 찾을 수 없습니다.")
     
@@ -321,10 +321,9 @@ async def update_reservation_status(reservation_id: str) -> Optional[Reservation
             "$unset": {"google_meet_link": ""}
         }
     )
-
     google_event_id = reservation.get("google_event_id")
     if google_event_id:
-        delete_google_calendar_event(google_event_id)
+        delete_google_calendar_event(google_event_id, credentials=user.get("credentials"))
         
 
     # 업데이트된 예약 정보 반환

@@ -81,9 +81,9 @@ async def read_reservation(reservation_id: str):
         )
 
 @router.patch("/cancel", response_model=ReservationDetail)
-async def cancel_reservation_endpoint(reservation_id: str):
+async def cancel_reservation_endpoint(reservation_id: str, user : dict = Depends(get_auth_user)):
     try:
-        updated_reservation = await update_reservation_status(reservation_id)
+        updated_reservation = await update_reservation_status(reservation_id, user)
         if not updated_reservation:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
         return updated_reservation

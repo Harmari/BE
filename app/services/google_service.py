@@ -84,7 +84,7 @@ async def add_event_to_user_calendar(user_email: str,
                 "timeZone": "Asia/Seoul",
             },
             "end": {
-                "dateTime": (event_date_obj + timedelta(hours=1)).isoformat(),  # 수정: event_date_obj 사용
+                "dateTime": (event_date_obj + timedelta(minutes=30)).isoformat(),  # 수정: event_date_obj 사용
                 "timeZone": "Asia/Seoul",
             },
             "attendees": [
@@ -161,15 +161,14 @@ def update_event_with_meet_link(event_id):
         return None
 
 
-def delete_google_calendar_event(event_id):
-    creds = get_service_account_credentials()
-    service = build('calendar', 'v3', credentials=creds)
+def delete_google_calendar_event(event_id, credentials:Credentials):
+    service = build('calendar', 'v3', credentials=credentials)
 
     try:
         # 이벤트가 존재하는지 확인
-        event = service.events().get(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
+        event = service.events().get(calendarId='primary', eventId=event_id).execute()
         if event:
-            service.events().delete(calendarId=DESIGNER_EMAIL, eventId=event_id).execute()
+            service.events().delete(calendarId='primary', eventId=event_id).execute()
             logger.info('--------------------------------구글캘린더 이벤트 삭제: %s' % event_id)
     except Exception as e:
         logger.error(f"이벤트 삭제 중 오류 발생: {e}")
