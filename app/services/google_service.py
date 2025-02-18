@@ -31,7 +31,7 @@ def get_service_account_credentials(access_token: str):
         return None
 
 
-async def add_event_to_user_calendar(user_email: str, access_token: str, event_date: datetime):
+async def add_event_to_user_calendar(user_email: str, credentials: Credentials, event_date: datetime):
     # event_date가 문자열이라면 datetime 객체로 변환
     if isinstance(event_date, str):
         logger.info(f"Received event_date: {event_date}")
@@ -43,8 +43,9 @@ async def add_event_to_user_calendar(user_email: str, access_token: str, event_d
         event_date_obj = event_date
 
     try:
-        service = get_service_account_credentials(access_token)
+        service = build("calendar", "v3", credentials=credentials)
 
+        # DESIGNER_EMAIL은 추후 디자이너id로 eamil 조회해와서 하는걸로 수정
         event_body = {
             "summary": "블리스 헤어 상담소",
             "description": "블리스 헤어 상담소 예약 이벤트",

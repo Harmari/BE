@@ -65,7 +65,7 @@ async def reservation_list_service(request: ReservationListRequest) -> Reservati
     return response
 
 
-async def reservation_create_service(request: ReservationCreateRequest, user: Dict[str, Any]) -> ReservationCreateResponse:
+async def reservation_create_service(request: ReservationCreateRequest, login_user: Dict) -> ReservationCreateResponse:
     dt_str = request.reservation_date_time.strip()
     now_kst = datetime.now(kst)
 
@@ -199,13 +199,13 @@ async def reservation_create_service(request: ReservationCreateRequest, user: Di
 
 
     # 구글 캘린더에 이벤트 추가
-    user_email = user.get("email")
+    user_email = login_user.get("email")
     # user_email = "hsc0125@knou.ac.kr"
     if user_email:
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
         event_id, event_html_link, meet_link = await add_event_to_user_calendar(
             user_email,
-            access_token=user.get("access_token"),
+            credentials=user.get("credentials"),
             event_date=event_date)
 
         if result is None:

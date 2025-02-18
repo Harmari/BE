@@ -1,8 +1,11 @@
 import logging
 from datetime import datetime, timedelta
+
+from google.oauth2.credentials import Credentials
 from jose import JWTError, jwt, ExpiredSignatureError
 from fastapi import HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordBearer
+from google.auth.transport.requests import Request as GoogleRequest
 
 from app.core.config import settings
 
@@ -119,31 +122,45 @@ def clear_auth_cookies(response: Response):
     response.delete_cookie("refresh_token")
 
 
-async def get_auth_user(request: Request):
+async def get_auth_user(request: Request) -> dict:
     frontend_url = getattr(request.state, "client_origin", None)
-    logging.info("접근한 URL ::::: %s", frontend_url)
-
-    # allowed_frontend_urls = settings.FRONTEND_URL.split(",")
-    # async def validate_token() -> dict | None:
-    #     access_token = request.cookies.get("access_token")
-    #     if not access_token:
-    #         return None
-    #     return await verify_access_token(access_token)
-
-    # 개발 단계: 로컬 프론트엔드 URL이 아닌 경우 토큰 검증 후 반환 (인증 정보 없으면 None)
-    # if frontend_url in allowed_frontend_urls:
-    #     return await validate_token()
 
     # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
     access_token = request.cookies.get("access_token")
-    # logging.info("access_token ::::: %s", access_token)
-    if not access_token:
+    refresh_token = request.cookies.get("refresh_token")
+
+    if not access_token or not refresh_token:
         logging.info("인증 정보 없음")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+
+    client_id = settings.GOOGLE_CLIENT_ID
+    client_secret = settings.GOOGLE_CLIENT_SECRET
+    token_uri = "https://oauth2.googleapis.com/token"
+    scopes = settings.GOOGLE_SCOPES
+
+    # Google OAuth2 Credentials 객체 생성
+    credentials = Credentials(
+        token=access_token,
+        refresh_token=refresh_token,
+        token_uri=token_uri,
+        client_id=client_id,
+        client_secret=client_secret,
+        scopes=scopes
+    )
+
+    # 만료 시 자동 갱신
+    if credentials.expired and credentials.refresh_token:
+        try:
+            credentials.refresh(GoogleRequest())
+        except Exception as e:
+            raise HTTPException(status_code=401, detail=f"토큰 갱신에 실패했습니다: {e}")
+
+    # JWT 기반 사용자 정보 검증
     user = await verify_access_token(access_token)
     if not user:
         logging.info("잘못되거나 만료된 토큰")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
 
-    user["access_token"] = access_token
+    # 반환할 정보에 credentials 추가
+    user["credentials"] = credentials
     return user
