@@ -51,7 +51,17 @@ async def add_event_to_user_calendar(user_email: str, credentials: Credentials, 
         # DESIGNER_EMAIL은 추후 디자이너id로 eamil 조회해와서 하는걸로 수정
         event_body = {
             "summary": "블리스 헤어 상담소",
-            "description": "블리스 헤어 상담소 예약 이벤트",
+            "description": """[ 블리스 헤어 상담소 예약 이벤트 ]
+
+            '{specialist}' 전문가 디자이너
+            
+            {name}
+    
+            {introduction}
+            
+
+            지역 : {region}
+            """,
             "start": {
                 "dateTime": event_date_obj.isoformat(),  # 수정: event_date_obj 사용
                 "timeZone": "Asia/Seoul",
