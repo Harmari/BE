@@ -97,7 +97,7 @@ async def get_current_user(request: Request) -> dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"error: {str(e)}")
     
-def set_auth_cookies(response: Response, access_token: str, refresh_token: str): 
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str, email: str):
     """JWT를 httpOnly Secure 쿠키에 저장"""
 
     # 쿠키에 Access Token 저장
@@ -122,6 +122,17 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         path="/"
     )
 
+    # 쿠키에 email 저장
+    response.set_cookie(
+        key="email",
+        value=email,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        domain="harmari.duckdns.org",
+        path="/"
+    )
+
 def clear_auth_cookies(response: Response): 
     """JWT 쿠키 삭제 (로그아웃 시 사용)"""
     response.delete_cookie("access_token")
@@ -129,26 +140,13 @@ def clear_auth_cookies(response: Response):
 
 
 async def get_auth_user(request: Request) -> dict:
-    # 쿠키에서 JWT 토큰 가져오기 (서버 자체에서 발급한 토큰)
-    access_token_jwt = request.cookies.get("access_token")
-    refresh_token_jwt = request.cookies.get("refresh_token")
-    if not access_token_jwt or not refresh_token_jwt:
-        logger.info("JWT 인증 정보 없음")
-        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
-
-    # JWT 기반 사용자 정보 검증 (예: payload에 email 포함)
-    user_jwt_data = await verify_access_token(access_token_jwt)
-    if not user_jwt_data:
-        logger.info("잘못되거나 만료된 JWT 토큰")
-        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
-
-    # DB에서 사용자 정보 조회 (예: 이메일 기준)
-    user_email = user_jwt_data.get("email")
+    # 쿠키에서 이메일 정보 추출 (예: "email" 키에 저장)
+    user_email = request.cookies.get("email")
     if not user_email:
-        logger.info("JWT 페이로드에 이메일 정보가 없습니다.")
+        logger.info("이메일 쿠키가 존재하지 않습니다.")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
 
-    db = get_database()
+    # DB에서 사용자 정보 조회 (이메일 기준)
     user_record = await db["users"].find_one({"email": user_email})
     if not user_record:
         logger.info("DB에서 사용자 정보를 찾을 수 없습니다.")
@@ -180,7 +178,7 @@ async def get_auth_user(request: Request) -> dict:
     if credentials.expired and credentials.refresh_token:
         try:
             credentials.refresh(GoogleRequest())
-            # 갱신된 토큰 정보를 DB에 업데이트할 수 있음 (선택 사항)
+            # 갱신된 토큰 정보를 DB에 업데이트 (선택 사항)
             await db["users"].update_one(
                 {"email": user_email},
                 {"$set": {
@@ -192,7 +190,10 @@ async def get_auth_user(request: Request) -> dict:
             logger.error(f"토큰 갱신 실패: {e}")
             raise HTTPException(status_code=401, detail=f"토큰 갱신에 실패했습니다: {e}")
 
-    # JWT 기반 사용자 정보에 Credentials 객체 추가
-    user_jwt_data["credentials"] = credentials
+    # 반환할 사용자 정보에 Credentials 객체와 이메일 추가
+    user_data = {
+        "email": user_email,
+        "credentials": credentials
+    }
+    return user_data
 
-    return user_jwt_data
