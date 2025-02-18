@@ -17,6 +17,7 @@ from app.db.session import get_database
 from app.api.payment.router import router as payment_router
 from app.scheduler.schedulers import start_scheduler
 from app.middleware.cors_middleware import CorsMiddleware
+from app.middleware.metrics_middleware import MetricsMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +43,7 @@ db = get_database()
 
 # 미들웨어 설정
 app.add_middleware(CorsMiddleware) # type: ignore
+app.add_middleware(MetricsMiddleware) # type: ignore
 
 # 에러 로깅
 @app.exception_handler(Exception)
