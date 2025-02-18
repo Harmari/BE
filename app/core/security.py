@@ -174,11 +174,13 @@ async def get_auth_user(request: Request) -> dict:
         scopes=scopes
     )
 
+    logging.info(f"credentials =======================> {credentials}")
+
     # 토큰 만료 시 자동 갱신
     if credentials.expired and credentials.refresh_token:
         try:
             credentials.refresh(GoogleRequest())
-            # 갱신된 토큰 정보를 DB에 업데이트 (선택 사항)
+            # 갱신된 토큰 정보를 DB에 업데이트
             await db["users"].update_one(
                 {"email": user_email},
                 {"$set": {
@@ -196,4 +198,3 @@ async def get_auth_user(request: Request) -> dict:
         "credentials": credentials
     }
     return user_data
-
