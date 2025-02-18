@@ -62,12 +62,14 @@ async def auth_callback(request: Request, response: Response):
         await authenticate_user(userinfo, response)
         logger.info(f"사용자 로그인 성공: {userinfo['email']}")
 
+        refresh_token_value = token_data.get("refresh_token")
+
         # Google 서비스 사용권한 토큰 저장
         user_email = userinfo.get("email")
         users_collection = db["users"]
         update_data = {
             "google_access_token": access_token,
-            "google_refresh_token": refresh_token
+            "google_refresh_token": refresh_token_value
         }
 
         await users_collection.update_one(
