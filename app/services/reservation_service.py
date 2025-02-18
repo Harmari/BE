@@ -212,7 +212,7 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
         # event_id, event_html_link, meet_link = await add_event_to_user_calendar(
         event_id, event_html_link, meet_link=await add_event_to_user_calendar(
             user_email,
-            credentials=user.get("credentials"),
+            credentials=login_user.get("credentials"),
             event_date=event_date)
 
         if event_id is None or event_html_link is None or meet_link is None :
