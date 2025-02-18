@@ -77,23 +77,17 @@ async def add_event_to_user_calendar(user_email: str,
 📍{designer_region} 
             """,
             "start": {
-                "dateTime": event_date_obj.isoformat(),  # 수정: event_date_obj 사용
+                "dateTime": event_date_obj.isoformat(),
                 "timeZone": "Asia/Seoul",
             },
             "end": {
-                "dateTime": (event_date_obj + timedelta(minutes=30)).isoformat(),  # 수정: event_date_obj 사용
+                "dateTime": (event_date_obj + timedelta(minutes=30)).isoformat(),
                 "timeZone": "Asia/Seoul",
             },
             "attendees": [
                 {"email": user_email},  # 예약한 유저
                 {"email": DESIGNER_EMAIL},  # 디자이너
             ],
-            "conferenceData": {
-                "createRequest": {
-                    "conferenceSolutionKey": {"type": "hangoutsMeet"},
-                    "requestId": "unique-request-id"
-                }
-            },
             "reminders": {
                 "useDefault": False,
                 "overrides": [
@@ -102,6 +96,15 @@ async def add_event_to_user_calendar(user_email: str,
                 ],
             },
         }
+
+        # '비대면' 모드일 때만 Google Meet 링크 생성
+        if mode == '비대면':
+            event_body["conferenceData"] = {
+                "createRequest": {
+                    "conferenceSolutionKey": {"type": "hangoutsMeet"},
+                    "requestId": "unique-request-id"
+                }
+            }
 
         created_event = service.events().insert(
             calendarId="primary",
