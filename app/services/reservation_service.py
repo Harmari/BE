@@ -232,7 +232,7 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
 
 
     response = ReservationCreateResponse(
-        reservation_id = new_id,
+        reservation_id = str(new_id),
         designer_id=request.designer_id,
         user_id=request.user_id,
         reservation_date_time=dt_str,
