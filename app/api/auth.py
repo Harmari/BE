@@ -16,6 +16,9 @@ from app.services.user_service import (
     logout_user
 )
 
+from app.db.session import get_database
+db = get_database()
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -58,6 +61,20 @@ async def auth_callback(request: Request, response: Response):
         # 로그인 성공 시 쿠키 설정
         await authenticate_user(userinfo, response)
         logger.info(f"사용자 로그인 성공: {userinfo['email']}")
+
+        # Google 서비스 사용권한 토큰 저장
+        user_email = userinfo.get("email")
+        users_collection = db["users"]
+        update_data = {
+            "google_access_token": access_token,
+            "google_refresh_token": refresh_token
+        }
+
+        await users_collection.update_one(
+            {"email": user_email},
+            {"$set": update_data},
+            upsert=True
+        )
 
         # 로그인 성공 후 프론트엔드로 리디렉트
         redirect_url = f"{FRONTEND_URL}/designer-list"
