@@ -19,6 +19,9 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 # OAuth2 설정
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+from app.db.session import get_database
+db = get_database()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -125,46 +128,81 @@ def clear_auth_cookies(response: Response):
     response.delete_cookie("refresh_token")
 
 
+from fastapi import HTTPException, Request
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
+from app.core.config import settings
+from app.services.auth_service import verify_access_token
+from app.db.session import get_database
+import logging
+
+logger = logging.getLogger(__name__)
+
 async def get_auth_user(request: Request) -> dict:
-    frontend_url = getattr(request.state, "client_origin", None)
-
-    # 기본적으로 로그인한 사용자만 접근 가능하도록 인증 검사
-    access_token = request.cookies.get("access_token")
-    refresh_token = request.cookies.get("refresh_token")
-
-    if not access_token or not refresh_token:
-        logging.info("인증 정보 없음")
+    # 쿠키에서 JWT 토큰 가져오기 (서버 자체에서 발급한 토큰)
+    access_token_jwt = request.cookies.get("access_token")
+    refresh_token_jwt = request.cookies.get("refresh_token")
+    if not access_token_jwt or not refresh_token_jwt:
+        logger.info("JWT 인증 정보 없음")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
 
+    # JWT 기반 사용자 정보 검증 (예: payload에 email 포함)
+    user_jwt_data = await verify_access_token(access_token_jwt)
+    if not user_jwt_data:
+        logger.info("잘못되거나 만료된 JWT 토큰")
+        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+
+    # DB에서 사용자 정보 조회 (예: 이메일 기준)
+    user_email = user_jwt_data.get("email")
+    if not user_email:
+        logger.info("JWT 페이로드에 이메일 정보가 없습니다.")
+        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+
+    db = get_database()
+    user_record = await db["users"].find_one({"email": user_email})
+    if not user_record:
+        logger.info("DB에서 사용자 정보를 찾을 수 없습니다.")
+        raise HTTPException(status_code=404, detail="사용자 정보를 찾을 수 없습니다.")
+
+    # DB에서 Google OAuth2 토큰 정보 가져오기
+    google_access_token = user_record.get("google_access_token")
+    google_refresh_token = user_record.get("google_refresh_token")
+    if not google_access_token or not google_refresh_token:
+        logger.info("DB에 Google 인증 정보가 없습니다.")
+        raise HTTPException(status_code=401, detail="Google 인증 정보가 없습니다.")
+
+    # Google OAuth2 Credentials 객체 생성 (캘린더 접근 권한 포함)
     client_id = settings.GOOGLE_CLIENT_ID
     client_secret = settings.GOOGLE_CLIENT_SECRET
     token_uri = "https://oauth2.googleapis.com/token"
     scopes = ["openid", "email", "profile", "https://www.googleapis.com/auth/calendar"]
 
-    # Google OAuth2 Credentials 객체 생성
     credentials = Credentials(
-        token=access_token,
-        refresh_token=refresh_token,
+        token=google_access_token,
+        refresh_token=google_refresh_token,
         token_uri=token_uri,
         client_id=client_id,
         client_secret=client_secret,
         scopes=scopes
     )
 
-    # 만료 시 자동 갱신
+    # 토큰 만료 시 자동 갱신
     if credentials.expired and credentials.refresh_token:
         try:
             credentials.refresh(GoogleRequest())
+            # 갱신된 토큰 정보를 DB에 업데이트할 수 있음 (선택 사항)
+            await db["users"].update_one(
+                {"email": user_email},
+                {"$set": {
+                    "google_access_token": credentials.token,
+                    "google_refresh_token": credentials.refresh_token
+                }}
+            )
         except Exception as e:
+            logger.error(f"토큰 갱신 실패: {e}")
             raise HTTPException(status_code=401, detail=f"토큰 갱신에 실패했습니다: {e}")
 
-    # JWT 기반 사용자 정보 검증
-    user = await verify_access_token(credentials.token)
-    if not user:
-        logging.info("잘못되거나 만료된 토큰")
-        raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
+    # JWT 기반 사용자 정보에 Credentials 객체 추가
+    user_jwt_data["credentials"] = credentials
 
-    # 반환할 정보에 credentials 추가
-    user["credentials"] = credentials
-
-    return user
+    return user_jwt_data
