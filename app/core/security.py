@@ -139,7 +139,7 @@ async def get_auth_user(request: Request) -> dict:
     client_id = settings.GOOGLE_CLIENT_ID
     client_secret = settings.GOOGLE_CLIENT_SECRET
     token_uri = "https://oauth2.googleapis.com/token"
-    scopes = settings.GOOGLE_SCOPES
+    scopes = ["openid", "email", "profile", "https://www.googleapis.com/auth/calendar"]
 
     # Google OAuth2 Credentials 객체 생성
     credentials = Credentials(

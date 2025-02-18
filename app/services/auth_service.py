@@ -14,7 +14,7 @@ async def get_google_auth_url() -> dict:
             "client_id": settings.GOOGLE_CLIENT_ID,
             "redirect_uri": settings.GOOGLE_REDIRECT_URI,
             "response_type": "code",
-            "scope": "openid email profile",
+            "scope": "openid email profile https://www.googleapis.com/auth/calendar",
             "access_type": "offline",
             "prompt": "consent"
         }
