@@ -27,7 +27,7 @@ async def authenticate_user(user_info: dict, response: Response) -> dict:
         refresh_token = create_refresh_token({"sub": email})
         access_token = create_access_token({"sub": email})
 
-        set_auth_cookies(response, access_token, refresh_token)
+        set_auth_cookies(response, access_token, refresh_token, email)
 
         return {"message": "로그인 성공"}
 
