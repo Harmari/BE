@@ -203,14 +203,14 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
     # user_email = "hsc0125@knou.ac.kr"
     if user_email:
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
-        event_id, event_html_link, meet_link = await add_event_to_user_calendar(
+        # event_id, event_html_link, meet_link = await add_event_to_user_calendar(
+        event_id, event_html_link, meet_link=await add_event_to_user_calendar(
             user_email,
             credentials=user.get("credentials"),
             event_date=event_date)
 
-        if result is None:
+        if event_id is None or event_html_link is None or meet_link is None :
             raise ValueError("Google Calendar 이벤트 생성에 실패했습니다.")
-        event_id, event_html_link, meet_link = result
 
         # 이벤트 ID를 데이터베이스에 저장
         await collection.update_one(
@@ -224,12 +224,16 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
             }
         )
 
+
     response = ReservationCreateResponse(
+        reservation_id = new_id,
         designer_id=request.designer_id,
         user_id=request.user_id,
         reservation_date_time=dt_str,
         mode=request.mode,
-        status=request.status
+        status=request.status,
+        google_calendar_url=event_html_link,
+        google_meet_link=meet_link
     )
     return response
 

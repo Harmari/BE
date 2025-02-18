@@ -31,11 +31,14 @@ class ReservationCreateRequest(BaseModel):
 
 
 class ReservationCreateResponse(BaseModel):
+    reservation_id: str
     user_id: str
     designer_id: str
     reservation_date_time: str
     mode: str
     status: str
+    google_meet_link: str
+    google_calendar_url: str
 
 
 class ReservationDetail(BaseModel):
