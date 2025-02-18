@@ -19,6 +19,9 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 # OAuth2 설정
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
     """JWT Access Token 생성"""
     try:
@@ -156,11 +159,12 @@ async def get_auth_user(request: Request) -> dict:
             raise HTTPException(status_code=401, detail=f"토큰 갱신에 실패했습니다: {e}")
 
     # JWT 기반 사용자 정보 검증
-    user = await verify_access_token(access_token)
+    user = await verify_access_token(credentials.token)
     if not user:
         logging.info("잘못되거나 만료된 토큰")
         raise HTTPException(status_code=401, detail="로그인 한 사용자만 사용 가능합니다.")
 
     # 반환할 정보에 credentials 추가
     user["credentials"] = credentials
+
     return user

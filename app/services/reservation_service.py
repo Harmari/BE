@@ -201,13 +201,13 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
     # 구글 캘린더에 이벤트 추가
     user_email = login_user.get("email")
     # user_email = "hsc0125@knou.ac.kr"
-    logger.info("user_email:::::::::::", user_email)
+    logger.info(f"user_email::::::::::: {user_email}")
 
     event_id = None
     event_html_link = ""
     meet_link = ""
 
-    if user_email:
+    if login_user:
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
         # event_id, event_html_link, meet_link = await add_event_to_user_calendar(
         event_id, event_html_link, meet_link=await add_event_to_user_calendar(
