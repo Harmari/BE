@@ -1,82 +1,90 @@
-from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Dict
 from app.db.session import get_database
 
 class MetricsAnalyzer:
     def __init__(self):
         self.db = get_database()
-    
-    async def get_conversion_rates(self, start_date: datetime, end_date: datetime) -> Dict:
-        """결제 전환율 분석"""
+
+    async def get_reservation_stats(self) -> Dict:
         pipeline = [
             {
                 "$match": {
-                    "timestamp": {"$gte": start_date, "$lte": end_date},
-                    "endpoint_category": {"$in": ["payment", "reservation"]}
+                    "request_details.cookies.email": {"$exists": True}
+                }
+            },
+            {
+                "$project": {
+                    "email": "$request_details.cookies.email",
+                    "isVisitor": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$eq": ["$path", "/auth/login"]},
+                                    {"$eq": ["$business_metrics.is_success", True]}
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    },
+                    "isReservationAttempt": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$eq": ["$path", "/payments/ready"]},
+                                    {"$eq": ["$business_metrics.is_success", True]}
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    },
+                    "isReservationCompleted": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$eq": ["$path", "/payments/approve"]},
+                                    {"$eq": ["$business_metrics.is_success", True]}
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
                 }
             },
             {
                 "$group": {
-                    "_id": "$endpoint_category",
-                    "total_requests": {"$sum": 1},
-                    "successful_requests": {
-                        "$sum": {"$cond": [{"$lt": ["$status_code", 400]}, 1, 0]}
-                    }
+                    "_id": "$email",
+                    "totalVisitors": {"$sum": "$isVisitor"},
+                    "totalReservationAttempts": {"$sum": "$isReservationAttempt"},
+                    "totalReservationCompleted": {"$sum": "$isReservationCompleted"}
                 }
             }
         ]
-        
         results = await self.db["metrics"].aggregate(pipeline).to_list(None)
-        return {
-            doc["_id"]: {
-                "conversion_rate": doc["successful_requests"] / doc["total_requests"] if doc["total_requests"] > 0 else 0,
-                "total_requests": doc["total_requests"],
-                "successful_requests": doc["successful_requests"]
-            }
-            for doc in results
+        overall = {
+            "total_visitors": 0,
+            "total_reservation_attempts": 0,
+            "total_reservation_completed": 0,
+            "user_stats": []
         }
-    
-    async def get_user_retention(self, days: int = 30) -> Dict:
-        """사용자 이탈률 분석"""
-        cutoff_date = datetime.now() - timedelta(days=days)
-        pipeline = [
-            {
-                "$match": {
-                    "timestamp": {"$gte": cutoff_date},
-                    "endpoint_category": "auth"
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$client_info.ip",
-                    "last_seen": {"$max": "$timestamp"},
-                    "first_seen": {"$min": "$timestamp"},
-                    "visit_count": {"$sum": 1}
-                }
-            }
-        ]
-        
-        results = await self.db["metrics"].aggregate(pipeline).to_list(None)
-        return {
-            "total_users": len(results),
-            "active_users": sum(1 for r in results if (datetime.now() - r["last_seen"]).days <= 7),
-            "retention_rate": len([r for r in results if r["visit_count"] > 1]) / len(results) if results else 0
-        }
-    
-    async def get_performance_metrics(self) -> Dict:
-        """성능 메트릭스 분석"""
-        pipeline = [
-            {
-                "$group": {
-                    "_id": "$endpoint_category",
-                    "avg_response_time": {"$avg": "$performance.total_time_ms"},
-                    "max_response_time": {"$max": "$performance.total_time_ms"},
-                    "error_rate": {
-                        "$avg": {"$cond": [{"$gte": ["$status_code", 400]}, 1, 0]}
-                    }
-                }
-            }
-        ]
-        
-        results = await self.db["metrics"].aggregate(pipeline).to_list(None)
-        return {doc["_id"]: doc for doc in results} 
+        for doc in results:
+            overall["total_visitors"] += doc.get("totalVisitors", 0)
+            overall["total_reservation_attempts"] += doc.get("totalReservationAttempts", 0)
+            overall["total_reservation_completed"] += doc.get("totalReservationCompleted", 0)
+            overall["user_stats"].append({
+                "email": doc["_id"],
+                "visitors": doc.get("totalVisitors", 0),
+                "reservation_attempts": doc.get("totalReservationAttempts", 0),
+                "reservation_completed": doc.get("totalReservationCompleted", 0),
+                "attempt_rate": (doc.get("totalReservationAttempts", 0) / doc.get("totalVisitors", 1)
+                                 if doc.get("totalVisitors", 0) > 0 else 0),
+                "conversion_rate": (doc.get("totalReservationCompleted", 0) / doc.get("totalVisitors", 1)
+                                    if doc.get("totalVisitors", 0) > 0 else 0)
+            })
+        overall["attempt_rate"] = (overall["total_reservation_attempts"] / overall["total_visitors"]
+                                   if overall["total_visitors"] > 0 else 0)
+        overall["conversion_rate"] = (overall["total_reservation_completed"] / overall["total_visitors"]
+                                      if overall["total_visitors"] > 0 else 0)
+        return overall

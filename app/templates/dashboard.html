@@ -1,112 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BI Dashboard</title>
+    <meta charset="UTF-8">
+    <title>예약 전환율 대시보드</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .metric-card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .chart-container {
-            height: 300px;
-            margin-bottom: 30px;
-        }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .stats-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        .stat-item { background: #f8f9fa; padding: 1rem; border-radius: 4px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; margin: 0.5rem 0; }
+        .stat-label { color: #666; }
+        .chart { width: 100%; height: 300px; margin-top: 1rem; }
+        .users-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .users-table th, .users-table td { padding: 0.75rem; border: 1px solid #dee2e6; text-align: left; }
+        .users-table th { background: #f8f9fa; }
+        .percentage { color: #0066cc; }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <h1>비즈니스 인텔리전스 대시보드</h1>
-        
-        <div class="metric-card">
-            <h2>전환율</h2>
-            <div class="chart-container">
-                <canvas id="conversionChart"></canvas>
+    <div class="container">
+        <div class="card">
+            <h2>예약 전환율 요약</h2>
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <div class="stat-label">총 방문 (로그인)</div>
+                    <div class="stat-value">{{ stats.total_visitors }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">예약 시도 수</div>
+                    <div class="stat-value">{{ stats.total_reservation_attempts }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">예약 완료 수</div>
+                    <div class="stat-value">{{ stats.total_reservation_completed }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">예약 시도율</div>
+                    <div class="stat-value">{{ "%.1f"|format(stats.attempt_rate * 100) }}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">예약 전환율</div>
+                    <div class="stat-value">{{ "%.1f"|format(stats.conversion_rate * 100) }}%</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="metric-card">
-            <h2>사용자 유지율</h2>
-            <div class="chart-container">
-                <canvas id="retentionChart"></canvas>
+            
+            <canvas id="reservationChart" class="chart"></canvas>
+            
+            <h3>사용자별 통계</h3>
+            <div style="overflow-x: auto;">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>이메일</th>
+                            <th>방문 수</th>
+                            <th>예약 시도</th>
+                            <th>예약 완료</th>
+                            <th>시도율</th>
+                            <th>전환율</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in stats.user_stats %}
+                        <tr>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.visitors }}</td>
+                            <td>{{ user.reservation_attempts }}</td>
+                            <td>{{ user.reservation_completed }}</td>
+                            <td class="percentage">{{ "%.1f"|format(user.attempt_rate * 100) }}%</td>
+                            <td class="percentage">{{ "%.1f"|format(user.conversion_rate * 100) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        </div>
-        
-        <div class="metric-card">
-            <h2>성능 메트릭스</h2>
-            <div class="chart-container">
-                <canvas id="performanceChart"></canvas>
-            </div>
+            
+            <!-- Removed raw BI data display -->
         </div>
     </div>
 
     <script>
-        // 전환율 차트
-        const conversionCtx = document.getElementById('conversionChart').getContext('2d');
-        new Chart(conversionCtx, {
+        const stats = {{ stats | tojson }};
+        new Chart(document.getElementById('reservationChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: Object.keys({{ conversion_rates|tojson }}),
+                labels: ['방문', '예약 시도', '예약 완료'],
                 datasets: [{
-                    label: '전환율',
-                    data: Object.values({{ conversion_rates|tojson }}).map(d => d.conversion_rate * 100),
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                    label: '건수',
+                    data: [
+                        stats.total_visitors,
+                        stats.total_reservation_attempts,
+                        stats.total_reservation_completed
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)'
+                    ]
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
                     y: {
-                        beginAtZero: true,
-                        max: 100
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw}`;
+                            }
+                        }
                     }
                 }
             }
         });
-
-        // 유지율 차트
-        const retentionCtx = document.getElementById('retentionChart').getContext('2d');
-        const retentionData = {{ retention_data|tojson }};
-        new Chart(retentionCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['활성 사용자', '비활성 사용자'],
-                datasets: [{
-                    data: [
-                        retentionData.active_users,
-                        retentionData.total_users - retentionData.active_users
-                    ],
-                    backgroundColor: [
-                        'rgba(75, 192, 192, 0.5)',
-                        'rgba(255, 99, 132, 0.5)'
-                    ]
-                }]
-            }
-        });
-
-        // 성능 차트
-        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-        const performanceData = {{ performance_data|tojson }};
-        new Chart(performanceCtx, {
-            type: 'line',
-            data: {
-                labels: Object.keys(performanceData),
-                datasets: [{
-                    label: '평균 응답 시간 (ms)',
-                    data: Object.values(performanceData).map(d => d.avg_response_time),
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            }
-        });
+        // Removed raw data JS code for displaying BI data.
     </script>
 </body>
-</html> 
+</html>

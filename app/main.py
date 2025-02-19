@@ -128,7 +128,6 @@ if not os.path.exists(images_directory):
 # 외부에서 '/static'경로로 접근할 수 있음 -> images 폴더
 app.mount("/static", StaticFiles(directory=os.path.join(os.getcwd(), "images")), name="static")
 
-
 # endpoint 설정하는 부분 하단에 import 후 추가
 
 app.include_router(test.router, prefix="/test", tags=["test"])
@@ -151,6 +150,7 @@ async def root():
         <body>
             <h1>Welcome!</h1>
             <p><a href="/docs">DOCS</a></p>
+            <p><a href="/bi/dashboard">bi</a></p>
         </body>
     </html>
     """
@@ -158,5 +158,3 @@ async def root():
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return FileResponse("favicon.ico")
-
-# uvicorn app.main:app --reload
