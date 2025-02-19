@@ -6,6 +6,7 @@ from app.core.config import settings
 from typing import Optional
 import json
 from datetime import datetime
+from fastapi.encoders import jsonable_encoder  # new import
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -30,8 +31,9 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         finally:
             process_time = time.time() - start_time
             
-            # 현재 시간을 datetime 객체로 가져오기
-            current_time = datetime.now()
+            # 현재 시간을 datetime 객체로 가져오기 (convert from string if necessary)
+            current_time_str = settings.CURRENT_DATETIME
+            current_time = datetime.fromisoformat(current_time_str) if isinstance(current_time_str, str) else current_time_str
             
             # 상세 메트릭스 수집
             path_parts = request.url.path.split('/')
@@ -39,7 +41,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             
             metrics_data = {
                 # 기본 요청 정보
-                "timestamp": settings.CURRENT_DATETIME,
+                "timestamp": current_time,
                 "path": request.url.path,
                 "endpoint_category": endpoint_category,
                 "method": request.method,
@@ -82,7 +84,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             # MongoDB에 저장
             db = get_database()
             try:
-                db["metrics"].insert_one(metrics_data)
+                db["metrics"].insert_one(jsonable_encoder(metrics_data))
             except Exception as e:
                 print(f"Failed to log metrics: {str(e)}")
                 
