@@ -11,7 +11,8 @@ from bson import ObjectId
 
 from app.core.config import settings
 from app.schemas.reservation_schema import DayList, ReservationListRequest, ReservationListResponse, \
-    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
+    ReservationCreateResponse, ReservationCreateRequest, ReservationDetail, ReservationSimple, GoogleMeetLinkResponse, \
+    PayReadyRequest
 from app.db.session import get_database
 from app.services.google_service import add_event_to_user_calendar, update_event_with_meet_link, delete_google_calendar_event
 
@@ -352,7 +353,15 @@ async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLi
     return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
 
 
-async def reservation_pay_ready_service() -> dict:
+async def reservation_pay_ready_service(request: PayReadyRequest) -> dict:
+    # Check for duplicate reservation by designer_id and reservation_date_time
+    existing = await collection.find_one({
+        "designer_id": ObjectId(request.designer_id),
+        "reservation_date_time": request.reservation_date_time
+    })
+    if existing:
+        raise ValueError("동일시간에 이미 예약이 존재합니다. 다른 시간을 선택해주세요.")
+
     new_id = ObjectId()
 
     await collection.update_one(

@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status, Request, Depends
 from app.core.security import get_auth_user
 from app.schemas.reservation_schema import (
     ReservationListResponse, ReservationListRequest, ReservationCreateResponse, ReservationCreateRequest, \
-    ReservationDetail, ReservationSimple, GoogleMeetLinkResponse
+    ReservationDetail, ReservationSimple, GoogleMeetLinkResponse, PayReadyRequest
 )
 from app.services.reservation_service import (
     reservation_list_service, reservation_create_service, get_reservations_list_by_user_id, get_reservation_by_id, \
@@ -110,10 +110,10 @@ async def generate_google_meet_link(reservation_id: str):
             detail=f"오류 : {str(e)}"
         )
 
-@router.get("/pay_ready")
-async def reservation_pay_ready_endpoint():
+@router.get("/pay_ready", response_model=PayReadyRequest)
+async def reservation_pay_ready_endpoint(request: PayReadyRequest):
     try:
-        result = await reservation_pay_ready_service()
+        result = await reservation_pay_ready_service(request)
         return result
     except Exception as e:
         # 에러 로깅 추가

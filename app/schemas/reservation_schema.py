@@ -65,3 +65,8 @@ class ReservationSimple(BaseModel):
 
 class GoogleMeetLinkResponse(BaseModel):
     google_meet_link: str
+
+
+class PayReadyRequest(BaseModel):
+    designer_id: str
+    reservation_date_time: str
