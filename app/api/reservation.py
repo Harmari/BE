@@ -110,10 +110,11 @@ async def generate_google_meet_link(reservation_id: str):
             detail=f"오류 : {str(e)}"
         )
 
-@router.get("/pay_ready", response_model=PayReadyRequest)
-async def reservation_pay_ready_endpoint(request: PayReadyRequest):
+@router.get("/pay_ready", response_model=dict)
+async def reservation_pay_ready_endpoint(designer_id: str, reservation_date_time: str):
     try:
-        result = await reservation_pay_ready_service(request)
+        req = PayReadyRequest(designer_id=designer_id, reservation_date_time=reservation_date_time)
+        result = await reservation_pay_ready_service(req)
         return result
     except Exception as e:
         # 에러 로깅 추가
