@@ -206,19 +206,17 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
 
     logger.info(f"Reservation created/updated with id: {new_id}")
 
-
-    # 구글 캘린더에 이벤트 추가
+    # 구글 캘린더에 이벤트 추가 (대면예약의 경우 로직 건너뜀)
     user_email = login_user.get("email")
-    # user_email = "hsc0125@knou.ac.kr"
     logger.info(f"user_email::::::::::: {user_email}")
 
     event_id = None
     event_html_link = ""
     meet_link = ""
-
-    if login_user:
+    
+    if login_user and request.mode != "대면":
         event_date = datetime.strptime(dt_str, "%Y%m%d%H%M")
-        event_id, event_html_link, meet_link=await add_event_to_user_calendar(
+        event_id, event_html_link, meet_link = await add_event_to_user_calendar(
             user_email,
             credentials=login_user.get("credentials"),
             event_date=event_date,
@@ -230,7 +228,7 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
             mode=request.mode
         )
 
-        if event_id is None or event_html_link is None or meet_link is None :
+        if event_id is None or event_html_link is None or meet_link is None:
             raise ValueError("Google Calendar 이벤트 생성에 실패했습니다.")
 
         # 이벤트 ID를 데이터베이스에 저장
@@ -244,7 +242,9 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
                 }
             }
         )
-
+    else:
+        # 대면예약인 경우 캘린더 생성 로직을 건너뜁니다.
+        logger.info("대면예약: 구글 캘린더 추가 로직 생략")
 
     response = ReservationCreateResponse(
         reservation_id = str(new_id),
