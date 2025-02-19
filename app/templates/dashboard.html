@@ -76,6 +76,33 @@
                 </table>
             </div>
             
+            <!-- New section: Designer Statistics -->
+            <h3>디자이너별 통계</h3>
+            <div style="overflow-x: auto;">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <!-- Changed header from '디자이너 ID' to '디자이너명' -->
+                            <th>디자이너명</th>
+                            <th>조회 수</th>
+                            <th>예약 건수</th>
+                            <th>예약 전환율</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in stats.designer_stats %}
+                        <tr>
+                            <!-- Changed to use designer_name -->
+                            <td>{{ d.designer_name }}</td>
+                            <td>{{ d.viewCount }}</td>
+                            <td>{{ d.reservationCount }}</td>
+                            <td class="percentage">{{ "%.1f"|format(d.reservationRate) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
             <!-- Removed raw BI data display -->
         </div>
     </div>

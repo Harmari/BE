@@ -15,6 +15,8 @@ async def dashboard(request: Request):
     try:
         analyzer = MetricsAnalyzer()
         stats = await analyzer.get_reservation_stats()
+        designer_stats = await analyzer.get_designer_stats()
+        stats["designer_stats"] = designer_stats
         context = {"request": request, "stats": stats}
         return templates.TemplateResponse("dashboard.html", context)
     except Exception as e:
@@ -30,7 +32,8 @@ async def dashboard(request: Request):
                     "total_reservation_completed": 0,
                     "attempt_rate": 0,
                     "conversion_rate": 0,
-                    "user_stats": []
+                    "user_stats": [],
+                    "designer_stats": []
                 }
             }
         )
