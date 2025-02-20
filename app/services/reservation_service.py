@@ -243,8 +243,7 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
             }
         )
     else:
-        # 대면예약인 경우 캘린더 생성 로직을 건너뜁니다.
-        logger.info("대면예약: 구글 캘린더 추가 로직 생략")
+        logger.info("대면: 구글 캘린더 추가 로직 생략")
 
     response = ReservationCreateResponse(
         reservation_id = str(new_id),
@@ -354,10 +353,12 @@ async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLi
 
 
 async def reservation_pay_ready_service(request: PayReadyRequest) -> dict:
-    # Check for duplicate reservation by designer_id and reservation_date_time
+
     existing = await collection.find_one({
         "designer_id": ObjectId(request.designer_id),
-        "reservation_date_time": request.reservation_date_time
+        "reservation_date_time": request.reservation_date_time,
+        "del_yn" : "N",
+        "status": {"$in": ["예약완료","결제대기","임시예약"]}
     })
     if existing:
         raise ValueError("동일시간에 이미 예약이 존재합니다. 다른 시간을 선택해주세요.")
