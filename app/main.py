@@ -29,10 +29,10 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # 애플리케이션 시작 시 실행
     start_scheduler()
-    logger.info("Scheduler started on application startup.")
+    # logger.info("Scheduler started on application startup.")
     yield  # 이 시점 이후에 애플리케이션 실행
     # 애플리케이션 종료 시 실행
-    logger.info("Application shutdown.")
+    # logger.info("Application shutdown.")
 
 
 app = FastAPI(title="할머리?머리하실?", description="API Documentation", version="1.0.0", lifespan=lifespan)

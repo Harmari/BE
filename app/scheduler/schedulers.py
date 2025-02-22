@@ -6,14 +6,14 @@ from app.db.session import get_database
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 db = get_database()
 
 async def delete_temp_reservations():
 
     # '임시예약' 상태이며 update_at이 현재로부터 1시간보다 이전인 예약 데이터 삭제처리
-    logger.info("delete_temp_reservations start")
+    # logger.info("delete_temp_reservations start")
 
     # 현재 시간
     now = datetime.fromisoformat(settings.CURRENT_DATETIME)
@@ -41,7 +41,7 @@ async def delete_waiting_reservations():
 
     # '예약대기' 상태이며 update_at이 현재로부터 24시간 이전인 예약 데이터 삭제 처리
 
-    logger.info("delete_waiting_reservations start")
+    # logger.info("delete_waiting_reservations start")
     # 현재 시간
     now = datetime.fromisoformat(settings.CURRENT_DATETIME)
     # 24시간 전 시간 계산
@@ -83,4 +83,4 @@ scheduler.add_job(
 
 def start_scheduler():
     scheduler.start()
-    logger.info("임시예약 삭제 Batch 시작.")
+    # logger.info("임시예약 삭제 Batch 시작.")
