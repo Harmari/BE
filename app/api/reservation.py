@@ -111,14 +111,14 @@ async def generate_google_meet_link(reservation_id: str):
         )
 
 @router.get("/pay_ready", response_model=dict)
-async def reservation_pay_ready_endpoint(designer_id: str, reservation_date_time: str):
+async def reservation_pay_ready_endpoint(designer_id: str, reservation_date_time: str, user : dict = Depends(get_auth_user)):
     try:
         req = PayReadyRequest(designer_id=designer_id, reservation_date_time=reservation_date_time)
-        result = await reservation_pay_ready_service(req)
+        result = await reservation_pay_ready_service(req, user)
         return result
     except Exception as e:
         # 에러 로깅 추가
-        print("Pay Ready Error:", str(e))  # 디버깅용
+        print("Pay Ready Error:", str(e))
         raise HTTPException(status_code=400, detail=str(e))
 
 

@@ -74,6 +74,8 @@ async def refresh_access_token(request: Request, response: Response):
             httponly=True,
             secure=True,
             samesite="None",
+            domain="harmari.duckdns.org",
+            path="/"
         )
 
         return {"message": "Access Token이 갱신되었습니다."}

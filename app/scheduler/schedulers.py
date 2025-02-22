@@ -39,7 +39,7 @@ async def delete_temp_reservations():
 
 async def delete_waiting_reservations():
 
-    # '예약대기' 상태이며 update_at이 현재로부터 24시간 이전인 예약 데이터 삭제 처리
+    # '결제대기' 상태이며 update_at이 현재로부터 24시간 이전인 예약 데이터 삭제 처리
 
     # logger.info("delete_waiting_reservations start")
     # 현재 시간
@@ -49,7 +49,7 @@ async def delete_waiting_reservations():
     threshold_str = threshold.isoformat()
 
     delete_filter = {
-        "status": "예약대기",
+        "status": "결제대기",
         "update_at": {"$lt": threshold_str},
         "del_yn": "N"
     }

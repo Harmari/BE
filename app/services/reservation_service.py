@@ -145,8 +145,6 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
         raise ValueError("해당 user_id에 해당하는 사용자가 존재하지 않습니다.")
 
     # 디자이너 정보 조회
-
-    # 디자이너 정보 조회
     designer_name = designer.get("name")
     designer_introduction = designer.get("introduction")
     designer_region = designer.get("region")
@@ -166,43 +164,19 @@ async def reservation_create_service(request: ReservationCreateRequest, login_us
         "del_yn": "N"
     }
 
+    # 무조건 임시예약이 생성된다는 전제로 만들어야함
     if request.reservation_id:
-        # reservation_id가 제공된 경우, 우선 임시예약인지 확인하면서 업데이트 시도
         result = await collection.find_one_and_update(
-            {
-                "_id": ObjectId(request.reservation_id),
-                "status": "임시예약"
-            },
+            {"_id": ObjectId(request.reservation_id), "status": "임시예약"},
             {"$set": update_data},
             return_document=ReturnDocument.AFTER
         )
         if result:
             new_id = result["_id"]
         else:
-            # 만약 해당 _id가 없거나 임시예약이 아니라면 새 예약을 생성
-            update_data["create_at"] = current_time_str
-            try:
-                insert_result = await collection.insert_one(update_data)
-            except DuplicateKeyError as e:
-                logger.error(f"동일 예약 중복 에러: {dt_str} - {e}")
-                raise ValueError("해당 일시에 이미 예약이 존재합니다.")
-            new_id = insert_result.inserted_id
+            raise ValueError("해당 임시예약이 존재하지 않습니다.")
     else:
-        # reservation_id가 제공되지 않은 경우, 중복 예약 여부 체크 후 새 예약 삽입
-        existing = await collection.find_one({
-            "designer_id": designer_obj_id,
-            "reservation_date_time": dt_str,
-        })
-        if existing:
-            logger.error(f"동일 예약 존재: {dt_str}")
-            raise ValueError("해당 일시에 이미 예약이 존재합니다.")
-        update_data["create_at"] = current_time_str
-        try:
-            insert_result = await collection.insert_one(update_data)
-        except DuplicateKeyError as e:
-            logger.error(f"동일 예약 중복 에러: {dt_str} - {e}")
-            raise ValueError("해당 일시에 이미 예약이 존재합니다.")
-        new_id = insert_result.inserted_id
+        raise ValueError("임시예약 id가 필요합니다.")
 
     logger.info(f"Reservation created/updated with id: {new_id}")
 
@@ -352,7 +326,7 @@ async def generate_google_meet_link_service(reservation_id: str) -> GoogleMeetLi
     return GoogleMeetLinkResponse(google_meet_link=google_meet_link)
 
 
-async def reservation_pay_ready_service(request: PayReadyRequest) -> dict:
+async def reservation_pay_ready_service(request: PayReadyRequest, login_user: Dict) -> dict:
 
     existing = await collection.find_one({
         "designer_id": ObjectId(request.designer_id),
@@ -365,10 +339,17 @@ async def reservation_pay_ready_service(request: PayReadyRequest) -> dict:
 
     new_id = ObjectId()
 
+    user_email = login_user.get("email")
+    find_user = await db["users"].find_one({"email": user_email})
+    user_id = find_user.get("_id")
+
     await collection.update_one(
         {"_id": new_id},
         {"$set": {
             "status": "임시예약",
+            "designer_id": request.designer_id,
+            "reservation_date_time": request.reservation_date_time,
+            "user_id": str(user_id),
             "create_at": current_time_str,
             "update_at": current_time_str,
         }},
