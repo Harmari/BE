@@ -21,6 +21,7 @@ from app.middleware.metrics_middleware import MetricsMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+logging.getLogger('apscheduler').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
