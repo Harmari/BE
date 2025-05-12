@@ -21,6 +21,38 @@
     });
   </script>
 
+  <script>
+    // 디스코드 버튼 클릭 처리 함수
+    function goToDiscord(location) {
+      // MongoDB에 클릭 이벤트 기록
+      fetch('/introduce/click-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: 'discord_button_click',
+          button_location: location,
+          user_agent: navigator.userAgent,
+          referrer: document.referrer
+        })
+      }).catch(error => console.error('클릭 기록 오류:', error));
+      
+      // Google Ads 전환 테그 처리
+      gtag('event', 'conversion', {
+        'send_to': 'AW-17074228413/N0HnCNWQpMYaEL2Z0M0_',
+        'event_callback': function() {
+          window.location.href = 'https://discord.gg/mabinogi01';
+        }
+      });
+      
+      // 포움백 (Analytics 차단 또는 실패 대비)
+      setTimeout(() => {
+        window.location.href = 'https://discord.gg/mabinogi01';
+      }, 500);
+      
+      return false;
+    }
+  </script>
+
   <title>마비노기 모바일 우연한만남 DISCORD</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
   <style>
@@ -132,7 +164,7 @@
   <header class="hero">
     <h1>마비노기 모바일 우연한만남 DISCORD</h1>
     <p>파티 모집·랭킹 조회·인구 통계·알림·이벤트까지<br>모두 한 곳에서 간편하게!</p>
-    <button class="btn" onclick="location.href='https://discord.gg/mabinogi01'">
+    <button class="btn" onclick="return goToDiscord('header')">
       지금 디스코드 참여하기
     </button>
   </header>
@@ -186,7 +218,7 @@
 
   <!-- Call-to-Action Footer -->
   <footer>
-    <button class="btn" onclick="location.href='https://discord.gg/mabinogi01'">
+    <button class="btn" onclick="return goToDiscord('footer')">
       디스코드 채널 입장하기
     </button>
   </footer>
