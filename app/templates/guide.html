@@ -7,25 +7,42 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #f5f5f5;
         }
+        .guide-container {
+            max-width: 90%;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
         .guide-image {
             max-width: 100%;
             height: auto;
+            display: block;
+        }
+        @media (min-width: 1200px) {
+            .guide-container {
+                max-width: 80%;
+            }
         }
         @media (max-width: 768px) {
-            .guide-image {
-                width: 100%;
+            .guide-container {
+                max-width: 95%;
+                padding: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <img src="https://harmari.duckdns.org/static/우만가이드.png" alt="우만점 가이드" class="guide-image">
+    <div class="guide-container">
+        <img src="https://harmari.duckdns.org/static/우만가이드.png" alt="우만점 가이드" class="guide-image">
+    </div>
 </body>
 </html>
